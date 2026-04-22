@@ -1,34 +1,45 @@
 import 'package:geolocator/geolocator.dart';
+import '../models/weather_model.dart'; // Імпортуємо наш LocationException
 
 class LocationService {
-  // Функція повертає об'єкт Position (з координатами lat та lon)
   Future<Position> getCurrentPosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Перевіряємо, чи взагалі увімкнений GPS на телефоні
+    // 1. Перевіряємо чи увімкнений GPS модуль (шторка на телефоні)
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw Exception('GPS вимкнено. Увімкніть локацію.');
+      throw LocationException(
+        'gps_disabled',
+        'GPS вимкнено. Увімкніть локацію для визначення погоди.',
+      );
     }
 
-    // Перевіряємо дозволи
+    // 2. Перевіряємо дозволи додатку
     permission = await Geolocator.checkPermission();
+
     if (permission == LocationPermission.denied) {
-      // Якщо немає, запитуємо у користувача
+      // Якщо ще не запитували або відхилили 1 раз - питаємо
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        throw Exception('Дозвіл на локацію відхилено');
+        throw LocationException(
+          'permission_denied',
+          'Дозвіл на локацію відхилено. Без нього автоматичний пошук не працюватиме.',
+        );
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      throw Exception('Дозвіл відхилено назавжди. Змініть це в налаштуваннях.');
+      // Користувач натиснув "Більше не питати"
+      throw LocationException(
+        'permission_denied_forever',
+        'Дозвіл відхилено назавжди. Перейдіть у налаштування додатку, щоб дозволити доступ.',
+      );
     }
 
-    // Якщо все ок - беремо координати.
-    // desiredAccuracy: LocationAccuracy.high - для точного місцезнаходження
+    // Якщо все супер - беремо координати
     return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 }
