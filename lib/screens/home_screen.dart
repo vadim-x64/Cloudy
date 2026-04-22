@@ -6,6 +6,9 @@ import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
 
+// Додаємо enum для вибору одиниць температури
+enum TempUnit { celsius, fahrenheit, kelvin }
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,10 +24,26 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Змінна для збереження вибраної одиниці (за замовчуванням Цельсій)
+  TempUnit _selectedUnit = TempUnit.celsius;
+
   @override
   void initState() {
     super.initState();
     _loadWeatherByLocation();
+  }
+
+  // === КОНВЕРТЕР ТЕМПЕРАТУРИ ===
+  String _formatTemp(double tempC) {
+    switch (_selectedUnit) {
+      case TempUnit.fahrenheit:
+        return '${(tempC * 9 / 5 + 32).round()}°F';
+      case TempUnit.kelvin:
+        return '${(tempC + 273.15).round()}K';
+      case TempUnit.celsius:
+      default:
+        return '${tempC.round()}°C';
+    }
   }
 
   Future<void> _loadWeatherByLocation() async {
@@ -124,7 +143,6 @@ class _HomeScreenState extends State<HomeScreen> {
           humidity: weather.humidity,
           windSpeed: weather.windSpeed,
           precipitation: weather.precipitation,
-          // Зберігаємо опади
           localTime: weather.localTime,
           sunrise: weather.sunrise,
           sunset: weather.sunset,
@@ -204,10 +222,105 @@ class _HomeScreenState extends State<HomeScreen> {
         : 'https://lottie.host/f6b9c9f4-18e3-4f93-8b7f-0e1b3d7c5885/Z1r1w1V1H1.json';
   }
 
+  // === ВІДЖЕТ ГРАДУСНИКА ===
+  Widget _buildThermometer(double tempC) {
+    // Встановлюємо умовний діапазон для градусника (-30 до +40)
+    double minT = -30;
+    double maxT = 40;
+    double range = maxT - minT;
+    double percent = ((tempC - minT) / range).clamp(0.0, 1.0);
+
+    return SizedBox(
+      height: 120, // Збільшено висоту
+      width: 45, // Збільшено ширину для поділок
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Трубка та колба
+          SizedBox(
+            width: 24,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                // Скляна трубка (фон)
+                Container(
+                  width: 12,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white54, width: 1),
+                  ),
+                ),
+                // Рівень рідини (класичний червоний)
+                FractionallySizedBox(
+                  heightFactor: (percent * 0.75) + 0.15,
+                  // 0.15 - мінімум для колби
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: 8,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.shade700,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                // Нижня колба
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.shade700,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white54, width: 1),
+                  ),
+                ),
+                // Відблиск на колбі для ефекту об'єму (3D)
+                Positioned(
+                  bottom: 14,
+                  right: 6,
+                  child: Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Поділки (шкала)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 32),
+              // Вирівнюємо по висоті трубки
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(7, (index) {
+                  // Кожна парна поділка довша за непарну
+                  bool isMajor = index % 2 == 0;
+                  return Container(
+                    height: 2,
+                    width: isMajor ? 12 : 6,
+                    color: Colors.white70,
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Знімаємо фокус і ховаємо клавіатуру при тапі по вільному місцю екрану
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,
       child: Scaffold(
@@ -232,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
-                    // --- ВЕРХНІЙ БЛОК: ПОШУК ---
+                    // --- ВЕРХНІЙ БЛОК: ПОШУК ТА КНОПКИ ---
                     Row(
                       children: [
                         Expanded(
@@ -266,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           color: Colors.white,
                                         ),
                                         decoration: InputDecoration(
-                                          hintText: 'Пошук міста...',
+                                          hintText: 'Пошук міста, області...',
                                           hintStyle: const TextStyle(
                                             color: Colors.white70,
                                           ),
@@ -284,7 +397,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                             Icons.search,
                                             color: Colors.white70,
                                           ),
-                                          // Додаємо хрестик, якщо є введений текст
                                           suffixIcon: value.text.isNotEmpty
                                               ? IconButton(
                                                   icon: const Icon(
@@ -293,8 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                   onPressed: () {
                                                     controller.clear();
-                                                    focusNode
-                                                        .unfocus(); // Ховаємо клавіатуру
+                                                    focusNode.unfocus();
                                                   },
                                                 )
                                               : null,
@@ -314,7 +425,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.transparent,
                                   child: Container(
                                     width:
-                                        MediaQuery.of(context).size.width - 90,
+                                        MediaQuery.of(context).size.width - 130,
+                                    // Зменшили ширину через додаткову кнопку
                                     margin: const EdgeInsets.only(top: 8),
                                     decoration: BoxDecoration(
                                       color: Colors.blueGrey.shade900
@@ -364,7 +476,66 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
+
+                        // Кнопка перемикання одиниць температури
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: PopupMenuButton<TempUnit>(
+                            icon: const Icon(
+                              Icons.thermostat,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            color: Colors.blueGrey.shade900,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            onSelected: (unit) =>
+                                setState(() => _selectedUnit = unit),
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: TempUnit.celsius,
+                                child: Text(
+                                  '°C - Цельсій',
+                                  style: TextStyle(
+                                    color: _selectedUnit == TempUnit.celsius
+                                        ? Colors.blueAccent
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: TempUnit.fahrenheit,
+                                child: Text(
+                                  '°F - Фаренгейт',
+                                  style: TextStyle(
+                                    color: _selectedUnit == TempUnit.fahrenheit
+                                        ? Colors.blueAccent
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: TempUnit.kelvin,
+                                child: Text(
+                                  'K - Кельвін',
+                                  style: TextStyle(
+                                    color: _selectedUnit == TempUnit.kelvin
+                                        ? Colors.blueAccent
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+                        // Кнопка локації
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -374,6 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: const Icon(
                               Icons.my_location,
                               color: Colors.white,
+                              size: 22,
                             ),
                             onPressed: _loadWeatherByLocation,
                           ),
@@ -428,7 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                           const SizedBox(height: 15),
-                          // Відображаємо день тижня, дату, час ТА ЧАСТИНУ ДНЯ (Ранок, Ніч тощо)
                           Text(
                             '${_getUkrainianWeekday(_weather!.localTime.weekday)}, ${DateFormat('d MMMM • HH:mm', 'uk_UA').format(_weather!.localTime)}\n${_weather!.partOfDay}',
                             style: const TextStyle(
@@ -458,14 +629,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                          Text(
-                            '${_weather!.temperature.round()}°',
-                            style: const TextStyle(
-                              fontSize: 90,
-                              fontWeight: FontWeight.w200,
-                              color: Colors.white,
-                              height: 1.1,
-                            ),
+                          // Блок з градусником і температурою
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildThermometer(_weather!.temperature),
+                              const SizedBox(width: 15),
+                              Text(
+                                _formatTemp(_weather!.temperature),
+                                // Динамічне відображення
+                                style: const TextStyle(
+                                  fontSize: 80,
+                                  fontWeight: FontWeight.w200,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
                           ),
 
                           Text(
@@ -481,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           const SizedBox(height: 30),
 
-                          // --- ПАНЕЛЬ ДЕТАЛЕЙ (Оновлено для Опадів і Вітру) ---
+                          // --- ПАНЕЛЬ ДЕТАЛЕЙ ---
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -498,9 +678,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       MainAxisAlignment.spaceAround,
                                   children: [
                                     _buildWeatherDetail(
-                                      Icons.thermostat,
+                                      Icons.thermostat_auto,
                                       'Відчувається',
-                                      '${_weather!.feelsLike.round()}°',
+                                      _formatTemp(
+                                        _weather!.feelsLike,
+                                      ), // Динамічне відображення
                                     ),
                                     _buildWeatherDetail(
                                       Icons.water_drop,
@@ -512,7 +694,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       'Опади',
                                       '${_weather!.precipitation} мм',
                                     ),
-                                    // Опади
                                   ],
                                 ),
                                 const Padding(
@@ -523,7 +704,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceAround,
                                   children: [
-                                    // Вітер в м/с та км/год
                                     _buildWeatherDetail(
                                       Icons.air,
                                       'Вітер',
@@ -570,7 +750,6 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
         const SizedBox(height: 2),
-        // Додано textAlign: TextAlign.center, щоб красиво виглядало в 2 рядки (як швидкість вітру)
         Text(
           value,
           style: const TextStyle(

@@ -49,18 +49,58 @@ class WeatherService {
       'LV': 'Латвія',
       'EE': 'Естонія',
     };
-    return countries[code] ?? code; // Якщо країни немає в списку, виведе код
+    return countries[code] ?? code;
   }
 
   // === ПЕРЕКЛАДАЧ ОБЛАСТЕЙ ===
   String cleanRegionName(String? region) {
     if (region == null || region.isEmpty) return '';
-    return region.replaceAll(' Oblast', ' обл.').replaceAll('Oblast', 'обл.');
+
+    // Словник для правильного перекладу областей (Geo API часто повертає їх англійською)
+    const Map<String, String> ukrainianRegions = {
+      'Kyiv Oblast': 'Київська обл.',
+      'Kyiv City': 'м. Київ',
+      'Kyiv': 'м. Київ',
+      'Lviv Oblast': 'Львівська обл.',
+      'Kharkiv Oblast': 'Харківська обл.',
+      'Odesa Oblast': 'Одеська обл.',
+      'Dnipro Oblast': 'Дніпропетровська обл.',
+      'Dnipropetrovsk Oblast': 'Дніпропетровська обл.',
+      'Donetsk Oblast': 'Донецька обл.',
+      'Zaporizhia Oblast': 'Запорізька обл.',
+      'Zaporizhzhia Oblast': 'Запорізька обл.',
+      'Ivano-Frankivsk Oblast': 'Івано-Франківська обл.',
+      'Volyn Oblast': 'Волинська обл.',
+      'Ternopil Oblast': 'Тернопільська обл.',
+      'Rivne Oblast': 'Рівненська обл.',
+      'Zhytomyr Oblast': 'Житомирська обл.',
+      'Khmelnytskyi Oblast': 'Хмельницька обл.',
+      'Khmelnytskyy Oblast': 'Хмельницька обл.',
+      'Chernivtsi Oblast': 'Чернівецька обл.',
+      'Zakarpattia Oblast': 'Закарпатська обл.',
+      'Vinnytsia Oblast': 'Вінницька обл.',
+      'Cherkasy Oblast': 'Черкаська обл.',
+      'Kirovohrad Oblast': 'Кіровоградська обл.',
+      'Poltava Oblast': 'Полтавська обл.',
+      'Chernihiv Oblast': 'Чернігівська обл.',
+      'Sumy Oblast': 'Сумська обл.',
+      'Mykolaiv Oblast': 'Миколаївська обл.',
+      'Kherson Oblast': 'Херсонська обл.',
+      'Luhansk Oblast': 'Луганська обл.',
+      'Autonomous Republic of Crimea': 'АР Крим',
+      'Crimea': 'АР Крим',
+      'Sevastopol City': 'м. Севастополь',
+      'Sevastopol': 'м. Севастополь',
+    };
+
+    // Якщо є в словнику - беремо переклад, інакше просто замінюємо слово Oblast
+    return ukrainianRegions[region] ??
+        region.replaceAll(' Oblast', ' обл.').replaceAll('Oblast', 'обл.');
   }
 
   // === ОТРИМАННЯ ПІДКАЗОК ДЛЯ ВИПАДАЮЧОГО СПИСКУ ===
   Future<List<CitySuggestion>> fetchCitySuggestions(String query) async {
-    if (query.length < 2) return []; // Не шукаємо, якщо менше 2 букв
+    if (query.length < 2) return [];
 
     final apiKey = dotenv.env['OPENWEATHER_API_KEY'];
     if (apiKey == null) return [];
@@ -80,13 +120,11 @@ class WeatherService {
         }).toList();
       }
     } catch (e) {
-      // Якщо помилка (немає інтернету), просто повертаємо пустий список
       return [];
     }
     return [];
   }
 
-  // Отримання погоди за вибраними координатами (з автодоповнення або GPS)
   Future<WeatherModel> fetchWeatherByCoordinates(
     double lat,
     double lon, [
@@ -100,7 +138,6 @@ class WeatherService {
       String region = '';
       String country = '';
 
-      // Якщо ми не знаємо точної назви (наприклад пошук йде суто по GPS), робимо реверс-геокодинг
       if (knownCityName == null) {
         final geoResponse = await http.get(
           Uri.parse('$_geoUrl/reverse?lat=$lat&lon=$lon&limit=1&appid=$apiKey'),
@@ -116,6 +153,7 @@ class WeatherService {
         }
       }
 
+      // Залишаємо units=metric для стабільності, конвертацію зробимо в UI
       final weatherUrl = Uri.parse(
         '$_weatherUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=uk',
       );
