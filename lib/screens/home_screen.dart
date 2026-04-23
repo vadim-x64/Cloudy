@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
+import '../widgets/animated_weather_icon.dart'; // <--- ДОДАЛИ НАШ НОВИЙ ВІДЖЕТ
 
 enum TempUnit { celsius, fahrenheit, kelvin }
 
@@ -250,25 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _getLottieAnimation() {
-    if (_weather == null)
-      return 'https://lottie.host/80ccecf6-a841-4547-86f2-bb44dffaa75a/z7J3g7yF3D.json';
-    bool isDay = _weather!.isDayTime;
-    String condition = _weather!.mainCondition.toLowerCase();
-
-    if (condition.contains('rain') || condition.contains('drizzle'))
-      return 'https://lottie.host/17e2c943-7f30-4e00-8dce-095cdb5a03e6/F2P1n1kZ1u.json';
-    if (condition.contains('snow'))
-      return 'https://lottie.host/797c0f1c-7f51-40c2-8419-f0db381e74a8/N0i1f1R0tX.json';
-    if (condition.contains('cloud'))
-      return isDay
-          ? 'https://lottie.host/ea9174df-3f62-43bb-a320-b4f0b2f8e1fa/C1a1N1c1A1.json'
-          : 'https://lottie.host/711cf2cb-2374-42b7-8798-7de7b9e0f31c/D1S1a1F1a1.json';
-    return isDay
-        ? 'https://lottie.host/9e530b80-1a76-4d56-a059-4d64bc86bb78/K1l1x1E1P1.json'
-        : 'https://lottie.host/f6b9c9f4-18e3-4f93-8b7f-0e1b3d7c5885/Z1r1w1V1H1.json';
-  }
-
   String? _getBackgroundLottie() {
     if (_weather == null) return null;
     String condition = _weather!.mainCondition.toLowerCase();
@@ -307,7 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(
               alignment: Alignment.bottomCenter,
               children: [
-                // Фонова колба
                 Container(
                   width: 12,
                   margin: const EdgeInsets.only(bottom: 12),
@@ -317,7 +298,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: Colors.white54, width: 1),
                   ),
                 ),
-                // Анімована шкала температури (грайливий ефект пружинки)
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(
                     begin: 0.15,
@@ -325,7 +305,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   duration: const Duration(milliseconds: 1500),
                   curve: Curves.elasticOut,
-                  // Додає приємний відскок
                   builder: (context, value, child) {
                     return FractionallySizedBox(
                       heightFactor: value,
@@ -342,7 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Нижній кружечок термометра
                 Container(
                   width: 24,
                   height: 24,
@@ -368,7 +346,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          // Поділки шкали
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 32),
@@ -420,8 +397,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     String? bgLottie = _getBackgroundLottie();
-
-    // Ключ на основі міста, щоб при кожному новому пошуку анімації програвались заново!
     Key weatherKey = ValueKey(_weather?.cityName ?? 'loading');
 
     return GestureDetector(
@@ -445,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // 2. Анімований Lottie-фон (Хмари, Дощ, Туман тощо)
+            // 2. Анімований Lottie-фон (залишаємо для загальної атмосфери хмар на задньому плані)
             if (bgLottie != null)
               Positioned.fill(
                 child: Opacity(
@@ -686,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 30),
 
-                        // --- ГОЛОВНА ІНФОРМАЦІЯ З КАСКАДНИМИ АНІМАЦІЯМИ ---
+                        // --- ГОЛОВНА ІНФОРМАЦІЯ ---
                         if (_isLoading)
                           const Padding(
                             padding: EdgeInsets.only(top: 100),
@@ -711,7 +686,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         else if (_weather != null)
                           Column(
                             key: weatherKey,
-                            // Прив'язуємо ключ, щоб перезапускати анімації
                             children: [
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 0),
@@ -759,30 +733,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
 
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 20),
 
+                              // --- ТУТ НАША НОВА КАСТОМНА ІКОНКА ---
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 150),
-                                child: SizedBox(
-                                  height: 180,
-                                  child: Lottie.network(
-                                    _getLottieAnimation(),
-                                    errorBuilder:
-                                        (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) => Image.network(
-                                          'https://openweathermap.org/img/wn/${_weather!.iconCode}@4x.png',
-                                          errorBuilder: (c, e, s) => const Icon(
-                                            Icons.cloud,
-                                            size: 100,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                  ),
+                                child: AnimatedWeatherIcon(
+                                  iconCode: _weather!.iconCode,
+                                  size: 160,
                                 ),
                               ),
+
+                              const SizedBox(height: 15),
 
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 200),
@@ -827,7 +789,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 40),
 
-                              // --- ПОГОДИННИЙ ПРОГНОЗ З ГРАФІКОМ ---
+                              // --- ПОГОДИННИЙ ПРОГНОЗ З ГРАФІКОМ І НОВИМИ ІКОНКАМИ ---
                               if (_weather!.hourlyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 300),
@@ -853,7 +815,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       horizontal: 0,
                                     ),
                                     child: SizedBox(
-                                      height: 140,
+                                      height: 150,
                                       child: SingleChildScrollView(
                                         scrollDirection: Axis.horizontal,
                                         physics: const BouncingScrollPhysics(),
@@ -964,7 +926,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 30),
 
-                              // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) ---
+                              // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) З НОВИМИ ІКОНКАМИ ---
                               if (_weather!.dailyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 450),
@@ -1023,10 +985,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
-                                              Image.network(
-                                                'https://openweathermap.org/img/wn/${daily.iconCode}.png',
-                                                width: 40,
-                                                height: 40,
+                                              // Замість Image.network -> AnimatedWeatherIcon
+                                              AnimatedWeatherIcon(
+                                                iconCode: daily.iconCode,
+                                                size:
+                                                    45, // Менший розмір для списку
                                               ),
                                               Row(
                                                 children: [
@@ -1110,7 +1073,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// --- СПЕЦІАЛЬНИЙ ВІДЖЕТ ДЛЯ ПЛАВНОЇ АНІМАЦІЇ ПОЯВИ ---
 class AnimatedEntrance extends StatefulWidget {
   final Widget child;
   final Duration delay;
@@ -1149,7 +1111,6 @@ class _AnimatedEntranceState extends State<AnimatedEntrance>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
-    // Затримка перед стартом анімації
     Future.delayed(widget.delay, () {
       if (mounted) _controller.forward();
     });
@@ -1176,7 +1137,6 @@ class _AnimatedEntranceState extends State<AnimatedEntrance>
   }
 }
 
-// --- КЛАСИ ДЛЯ МАЛЮВАННЯ ГРАФІКА ТЕМПЕРАТУРИ ---
 class HourlyTemperatureChart extends StatelessWidget {
   final List<HourlyForecast> forecast;
   final String Function(double) formatTempNumber;
@@ -1189,17 +1149,18 @@ class HourlyTemperatureChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double itemWidth = 60.0;
+    const double itemWidth =
+        65.0; // Трохи збільшив ширину для кращого вигляду кастомних іконок
     final double chartWidth = forecast.length * itemWidth;
 
     return SizedBox(
       width: chartWidth,
-      height: 140,
+      height: 150,
       child: Stack(
         children: [
           Positioned(
-            top: 40,
-            bottom: 40,
+            top: 50,
+            bottom: 30,
             left: 0,
             right: 0,
             child: CustomPaint(
@@ -1224,10 +1185,10 @@ class HourlyTemperatureChart extends StatelessWidget {
                         fontSize: 12,
                       ),
                     ),
-                    Image.network(
-                      'https://openweathermap.org/img/wn/${hourly.iconCode}.png',
-                      width: 35,
-                      height: 35,
+                    // Замість Image.network -> AnimatedWeatherIcon
+                    AnimatedWeatherIcon(
+                      iconCode: hourly.iconCode,
+                      size: 45, // Оптимальний розмір для графіка
                     ),
                     Text(
                       '${formatTempNumber(hourly.temperature)}°',
