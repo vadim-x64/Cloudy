@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _locationService = LocationService();
 
   WeatherModel? _weather;
+  DateTime? _lastUpdated; // Змінна для збереження часу останнього оновлення
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -99,7 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
         position.latitude,
         position.longitude,
       );
-      setState(() => _weather = weather);
+      setState(() {
+        _weather = weather;
+        _lastUpdated =
+            DateTime.now(); // Оновлюємо час при успішному завантаженні
+      });
     } catch (e) {
       if (e is LocationException) {
         _showLocationErrorDialog(e);
@@ -193,6 +198,8 @@ class _HomeScreenState extends State<HomeScreen> {
           hourlyForecast: weather.hourlyForecast,
           dailyForecast: weather.dailyForecast,
         );
+        _lastUpdated =
+            DateTime.now(); // Оновлюємо час при успішному завантаженні
       });
     } catch (e) {
       setState(() => _errorMessage = 'Не вдалося завантажити погоду');
@@ -687,51 +694,160 @@ class _HomeScreenState extends State<HomeScreen> {
                           Column(
                             key: weatherKey,
                             children: [
+                              // --- ДВІ КАРТКИ: МІСЦЕ ТА ЧАС ---
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 0),
-                                child: Text(
-                                  _weather!.cityName,
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    height: 1.1,
-                                    shadows: textShadows,
+                                child: IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // 1. Картка "Локація"
+                                      Expanded(
+                                        child: _buildGlassContainer(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 10,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_outlined,
+                                                color: Colors.white,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                _weather!.cityName,
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                  height: 1.2,
+                                                  shadows: textShadows,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_weather!.region.isNotEmpty ? '${_weather!.region}\n' : ''}${_weather!.country}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white
+                                                      .withOpacity(0.8),
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.2,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 15),
+                                      // 2. Картка "Час і дата"
+                                      Expanded(
+                                        child: _buildGlassContainer(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 10,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.schedule,
+                                                color: Colors.white,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                DateFormat(
+                                                  'HH:mm',
+                                                ).format(_weather!.localTime),
+                                                style: TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                  height: 1.1,
+                                                  shadows: textShadows,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_getUkrainianWeekday(_weather!.localTime.weekday)}\n${DateFormat('d MMMM', 'uk_UA').format(_weather!.localTime)}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white
+                                                      .withOpacity(0.8),
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.2,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Text(
+                                                  _weather!.partOfDay,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ),
 
-                              const SizedBox(height: 4),
-                              AnimatedEntrance(
-                                delay: const Duration(milliseconds: 50),
-                                child: Text(
-                                  '${_weather!.region.isNotEmpty ? '${_weather!.region}, ' : ''}${_weather!.country}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.w500,
-                                    shadows: textShadows,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
+                              const SizedBox(height: 10),
 
-                              const SizedBox(height: 15),
-                              AnimatedEntrance(
-                                delay: const Duration(milliseconds: 100),
-                                child: Text(
-                                  '${_getUkrainianWeekday(_weather!.localTime.weekday)}, ${DateFormat('d MMMM • HH:mm', 'uk_UA').format(_weather!.localTime)}\n${_weather!.partOfDay}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.4,
-                                    shadows: textShadows,
+                              // --- ІНДИКАТОР ОСТАННЬОГО ОНОВЛЕННЯ ---
+                              if (_lastUpdated != null)
+                                AnimatedEntrance(
+                                  delay: const Duration(milliseconds: 50),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.update,
+                                        color: Colors.white.withOpacity(0.7),
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        'Дані оновлено востаннє о ${DateFormat('HH:mm').format(_lastUpdated!)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white.withOpacity(0.7),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
-                              ),
 
                               const SizedBox(height: 20),
 
