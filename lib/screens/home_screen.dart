@@ -6,7 +6,6 @@ import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
 
-// Додаємо enum для вибору одиниць температури
 enum TempUnit { celsius, fahrenheit, kelvin }
 
 class HomeScreen extends StatefulWidget {
@@ -24,7 +23,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Змінна для збереження вибраної одиниці (за замовчуванням Цельсій)
   TempUnit _selectedUnit = TempUnit.celsius;
 
   @override
@@ -33,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadWeatherByLocation();
   }
 
-  // === КОНВЕРТЕР ТЕМПЕРАТУРИ ===
   String _formatTemp(double tempC) {
     switch (_selectedUnit) {
       case TempUnit.fahrenheit:
@@ -42,7 +39,30 @@ class _HomeScreenState extends State<HomeScreen> {
         return '${(tempC + 273.15).round()}K';
       case TempUnit.celsius:
       default:
-        return '${tempC.round()}°C';
+        return '${tempC.round()}°';
+    }
+  }
+
+  // Конвертація hPa у мм рт. ст.
+  String _formatPressure(int hPa) {
+    return '${(hPa * 0.750062).round()} мм рт.ст.';
+  }
+
+  // Розшифровка індексу якості повітря
+  Map<String, dynamic> _getAqiInfo(int aqi) {
+    switch (aqi) {
+      case 1:
+        return {'text': 'Відмінно', 'color': Colors.greenAccent};
+      case 2:
+        return {'text': 'Добре', 'color': Colors.lightGreen};
+      case 3:
+        return {'text': 'Помірно', 'color': Colors.yellowAccent};
+      case 4:
+        return {'text': 'Погано', 'color': Colors.orangeAccent};
+      case 5:
+        return {'text': 'Небезпечно', 'color': Colors.redAccent};
+      default:
+        return {'text': 'Невідомо', 'color': Colors.white};
     }
   }
 
@@ -143,9 +163,13 @@ class _HomeScreenState extends State<HomeScreen> {
           humidity: weather.humidity,
           windSpeed: weather.windSpeed,
           precipitation: weather.precipitation,
+          pressure: weather.pressure,
+          aqi: weather.aqi,
           localTime: weather.localTime,
           sunrise: weather.sunrise,
           sunset: weather.sunset,
+          hourlyForecast: weather.hourlyForecast,
+          dailyForecast: weather.dailyForecast,
         );
       });
     } catch (e) {
@@ -165,6 +189,11 @@ class _HomeScreenState extends State<HomeScreen> {
       'Субота',
       'Неділя',
     ];
+    return days[weekday - 1];
+  }
+
+  String _getShortWeekday(int weekday) {
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     return days[weekday - 1];
   }
 
@@ -222,27 +251,23 @@ class _HomeScreenState extends State<HomeScreen> {
         : 'https://lottie.host/f6b9c9f4-18e3-4f93-8b7f-0e1b3d7c5885/Z1r1w1V1H1.json';
   }
 
-  // === ВІДЖЕТ ГРАДУСНИКА ===
   Widget _buildThermometer(double tempC) {
-    // Встановлюємо умовний діапазон для градусника (-30 до +40)
     double minT = -30;
     double maxT = 40;
     double range = maxT - minT;
     double percent = ((tempC - minT) / range).clamp(0.0, 1.0);
 
     return SizedBox(
-      height: 120, // Збільшено висоту
-      width: 45, // Збільшено ширину для поділок
+      height: 120,
+      width: 45,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Трубка та колба
           SizedBox(
             width: 24,
             child: Stack(
               alignment: Alignment.bottomCenter,
               children: [
-                // Скляна трубка (фон)
                 Container(
                   width: 12,
                   margin: const EdgeInsets.only(bottom: 12),
@@ -252,10 +277,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: Colors.white54, width: 1),
                   ),
                 ),
-                // Рівень рідини (класичний червоний)
                 FractionallySizedBox(
                   heightFactor: (percent * 0.75) + 0.15,
-                  // 0.15 - мінімум для колби
                   alignment: Alignment.bottomCenter,
                   child: Container(
                     width: 8,
@@ -266,7 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Нижня колба
                 Container(
                   width: 24,
                   height: 24,
@@ -276,7 +298,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: Colors.white54, width: 1),
                   ),
                 ),
-                // Відблиск на колбі для ефекту об'єму (3D)
                 Positioned(
                   bottom: 14,
                   right: 6,
@@ -293,16 +314,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          // Поділки (шкала)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 32),
-              // Вирівнюємо по висоті трубки
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: List.generate(7, (index) {
-                  // Кожна парна поділка довша за непарну
                   bool isMajor = index % 2 == 0;
                   return Container(
                     height: 2,
@@ -379,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           color: Colors.white,
                                         ),
                                         decoration: InputDecoration(
-                                          hintText: 'Пошук міста, області...',
+                                          hintText: 'Пошук міста...',
                                           hintStyle: const TextStyle(
                                             color: Colors.white70,
                                           ),
@@ -426,7 +444,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Container(
                                     width:
                                         MediaQuery.of(context).size.width - 130,
-                                    // Зменшили ширину через додаткову кнопку
                                     margin: const EdgeInsets.only(top: 8),
                                     decoration: BoxDecoration(
                                       color: Colors.blueGrey.shade900
@@ -478,7 +495,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 8),
 
-                        // Кнопка перемикання одиниць температури
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -535,7 +551,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
 
                         const SizedBox(width: 8),
-                        // Кнопка локації
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -629,15 +644,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                          // Блок з градусником і температурою
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               _buildThermometer(_weather!.temperature),
                               const SizedBox(width: 15),
                               Text(
-                                _formatTemp(_weather!.temperature),
-                                // Динамічне відображення
+                                _formatTemp(_weather!.temperature) +
+                                    (_selectedUnit == TempUnit.celsius
+                                        ? 'C'
+                                        : ''),
                                 style: const TextStyle(
                                   fontSize: 80,
                                   fontWeight: FontWeight.w200,
@@ -661,7 +677,80 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           const SizedBox(height: 30),
 
-                          // --- ПАНЕЛЬ ДЕТАЛЕЙ ---
+                          // --- ПОГОДИННИЙ ПРОГНОЗ (24 години) ---
+                          if (_weather!.hourlyForecast.isNotEmpty) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Прогноз на 24 години',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                              ),
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: _weather!.hourlyForecast.length,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final hourly =
+                                      _weather!.hourlyForecast[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 15,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          DateFormat(
+                                            'HH:mm',
+                                          ).format(hourly.time),
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        Image.network(
+                                          'https://openweathermap.org/img/wn/${hourly.iconCode}.png',
+                                          width: 40,
+                                          height: 40,
+                                        ),
+                                        Text(
+                                          _formatTemp(hourly.temperature),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+
+                          // --- ПАНЕЛЬ ДЕТАЛЕЙ (Додано Тиск та AQI) ---
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -680,9 +769,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     _buildWeatherDetail(
                                       Icons.thermostat_auto,
                                       'Відчувається',
-                                      _formatTemp(
-                                        _weather!.feelsLike,
-                                      ), // Динамічне відображення
+                                      _formatTemp(_weather!.feelsLike),
                                     ),
                                     _buildWeatherDetail(
                                       Icons.water_drop,
@@ -725,9 +812,127 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ],
                                 ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 15.0),
+                                  child: Divider(color: Colors.white24),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildWeatherDetail(
+                                      Icons.speed,
+                                      'Тиск',
+                                      _formatPressure(_weather!.pressure),
+                                    ),
+                                    _buildWeatherDetail(
+                                      Icons.masks,
+                                      'Якість повітря',
+                                      _getAqiInfo(_weather!.aqi)['text'],
+                                      valueColor: _getAqiInfo(
+                                        _weather!.aqi,
+                                      )['color'],
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
+
+                          const SizedBox(height: 30),
+
+                          // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) ---
+                          if (_weather!.dailyForecast.isNotEmpty) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Прогноз на 5 днів',
+                                // Безкоштовне API дає 5 днів, а не 7
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 15,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                              ),
+                              child: ListView.separated(
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: _weather!.dailyForecast.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(
+                                      color: Colors.white24,
+                                      height: 1,
+                                    ),
+                                itemBuilder: (context, index) {
+                                  final daily = _weather!.dailyForecast[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        SizedBox(
+                                          width: 100,
+                                          child: Text(
+                                            _getUkrainianWeekday(
+                                              daily.date.weekday,
+                                            ),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                        Image.network(
+                                          'https://openweathermap.org/img/wn/${daily.iconCode}.png',
+                                          width: 40,
+                                          height: 40,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              _formatTemp(daily.minTemp),
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              _formatTemp(daily.maxTemp),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
                         ],
                       ),
                   ],
@@ -740,26 +945,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWeatherDetail(IconData icon, String label, String value) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white70, size: 28),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+  Widget _buildWeatherDetail(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white70, size: 28),
+          const SizedBox(height: 5),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
           ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -6,9 +6,12 @@ import '../models/weather_model.dart';
 class WeatherService {
   static const String _weatherUrl =
       'https://api.openweathermap.org/data/2.5/weather';
+  static const String _forecastUrl =
+      'https://api.openweathermap.org/data/2.5/forecast';
+  static const String _airPollutionUrl =
+      'https://api.openweathermap.org/data/2.5/air_pollution';
   static const String _geoUrl = 'https://api.openweathermap.org/geo/1.0';
 
-  // === ПЕРЕКЛАДАЧ КРАЇН ===
   String translateCountry(String code) {
     const Map<String, String> countries = {
       'UA': 'Україна',
@@ -52,11 +55,9 @@ class WeatherService {
     return countries[code] ?? code;
   }
 
-  // === ПЕРЕКЛАДАЧ ОБЛАСТЕЙ ===
   String cleanRegionName(String? region) {
     if (region == null || region.isEmpty) return '';
 
-    // Словник для правильного перекладу областей (Geo API часто повертає їх англійською)
     const Map<String, String> ukrainianRegions = {
       'Kyiv Oblast': 'Київська обл.',
       'Kyiv City': 'м. Київ',
@@ -93,12 +94,10 @@ class WeatherService {
       'Sevastopol': 'м. Севастополь',
     };
 
-    // Якщо є в словнику - беремо переклад, інакше просто замінюємо слово Oblast
     return ukrainianRegions[region] ??
         region.replaceAll(' Oblast', ' обл.').replaceAll('Oblast', 'обл.');
   }
 
-  // === ОТРИМАННЯ ПІДКАЗОК ДЛЯ ВИПАДАЮЧОГО СПИСКУ ===
   Future<List<CitySuggestion>> fetchCitySuggestions(String query) async {
     if (query.length < 2) return [];
 
@@ -153,15 +152,45 @@ class WeatherService {
         }
       }
 
-      // Залишаємо units=metric для стабільності, конвертацію зробимо в UI
+      // Робимо 3 запити паралельно для швидкості
       final weatherUrl = Uri.parse(
         '$_weatherUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=uk',
       );
-      final response = await http.get(weatherUrl);
+      final forecastUrl = Uri.parse(
+        '$_forecastUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=uk',
+      );
+      final aqiUrl = Uri.parse(
+        '$_airPollutionUrl?lat=$lat&lon=$lon&appid=$apiKey',
+      );
 
-      if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(response.body);
-        return WeatherModel.fromJson(jsonMap, ukName, region, country);
+      final responses = await Future.wait([
+        http.get(weatherUrl),
+        http.get(forecastUrl),
+        http.get(aqiUrl),
+      ]);
+
+      final weatherRes = responses[0];
+      final forecastRes = responses[1];
+      final aqiRes = responses[2];
+
+      if (weatherRes.statusCode == 200) {
+        final weatherJson = jsonDecode(weatherRes.body);
+
+        Map<String, dynamic>? forecastJson;
+        if (forecastRes.statusCode == 200)
+          forecastJson = jsonDecode(forecastRes.body);
+
+        Map<String, dynamic>? aqiJson;
+        if (aqiRes.statusCode == 200) aqiJson = jsonDecode(aqiRes.body);
+
+        return WeatherModel.fromJson(
+          weatherJson,
+          forecastJson,
+          aqiJson,
+          ukName,
+          region,
+          country,
+        );
       } else {
         throw Exception('Не вдалося завантажити погоду');
       }
