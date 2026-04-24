@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/location_service.dart';
-import '../widgets/animated_weather_icon.dart';
+import '../widgets/animated_weather_icon.dart'; // <--- ДОДАЛИ НАШ НОВИЙ ВІДЖЕТ
 
 enum TempUnit { celsius, fahrenheit, kelvin }
 
@@ -22,16 +22,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final _locationService = LocationService();
 
   WeatherModel? _weather;
-  DateTime? _lastUpdated;
+  DateTime? _lastUpdated; // Змінна для збереження часу останнього оновлення
   bool _isLoading = false;
   String? _errorMessage;
 
   TempUnit _selectedUnit = TempUnit.celsius;
 
+  // Стиль для тексту з тінями: зробили тінь трохи темнішою для ідеального контрасту
   final List<Shadow> textShadows = [
     const Shadow(
       offset: Offset(1.0, 1.0),
-      blurRadius: 3.0, // Зменшено з 4.0 для оптимізації
+      blurRadius: 4.0,
       color: Colors.black87,
     ),
   ];
@@ -101,7 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       setState(() {
         _weather = weather;
-        _lastUpdated = DateTime.now();
+        _lastUpdated =
+            DateTime.now(); // Оновлюємо час при успішному завантаженні
       });
     } catch (e) {
       if (e is LocationException) {
@@ -196,7 +198,8 @@ class _HomeScreenState extends State<HomeScreen> {
           hourlyForecast: weather.hourlyForecast,
           dailyForecast: weather.dailyForecast,
         );
-        _lastUpdated = DateTime.now();
+        _lastUpdated =
+            DateTime.now(); // Оновлюємо час при успішному завантаженні
       });
     } catch (e) {
       setState(() => _errorMessage = 'Не вдалося завантажити погоду');
@@ -273,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .map((c) => Color.lerp(c, Colors.grey.shade400, 0.25)!)
           .toList();
     }
+
     return baseColors;
   }
 
@@ -402,26 +406,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ОПТИМІЗАЦІЯ Glassmorphism:
-  // Додано RepaintBoundary. Зменшено sigma з 10.0 до 5.0 (візуально схоже, але вдвічі легше).
   Widget _buildGlassContainer({
     required Widget child,
     EdgeInsetsGeometry? padding,
   }) {
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: child,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
           ),
+          child: child,
         ),
       ),
     );
@@ -453,16 +453,13 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             if (bgLottie != null)
-              // ОПТИМІЗАЦІЯ: Lottie у власному шарі, щоб не змушувати скло перемальовуватись постійно
               Positioned.fill(
-                child: RepaintBoundary(
-                  child: Opacity(
-                    opacity: 0.25,
-                    child: Lottie.network(
-                      bgLottie,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) => const SizedBox(),
-                    ),
+                child: Opacity(
+                  opacity: 0.25,
+                  child: Lottie.network(
+                    bgLottie,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => const SizedBox(),
                   ),
                 ),
               ),
@@ -694,6 +691,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 30),
 
+                        // --- ГОЛОВНА ІНФОРМАЦІЯ ---
                         if (_isLoading)
                           Padding(
                             padding: const EdgeInsets.only(top: 100),
@@ -741,6 +739,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.stretch,
                                     children: [
+                                      // 1. Картка "Локація"
                                       Expanded(
                                         child: _buildGlassContainer(
                                           padding: const EdgeInsets.symmetric(
@@ -755,7 +754,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 Icons.location_on_outlined,
                                                 color: Colors.white,
                                                 size: 28,
-                                                shadows: textShadows,
+                                                shadows:
+                                                    textShadows, // Тінь для іконки
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
@@ -780,7 +780,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       .withOpacity(0.9),
                                                   fontWeight: FontWeight.w500,
                                                   height: 1.2,
-                                                  shadows: textShadows,
+                                                  shadows:
+                                                      textShadows, // Додали тінь
                                                 ),
                                                 textAlign: TextAlign.center,
                                                 maxLines: 2,
@@ -791,6 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 15),
+                                      // 2. Картка "Час і дата"
                                       Expanded(
                                         child: _buildGlassContainer(
                                           padding: const EdgeInsets.symmetric(
@@ -805,7 +807,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 Icons.schedule,
                                                 color: Colors.white,
                                                 size: 28,
-                                                shadows: textShadows,
+                                                shadows:
+                                                    textShadows, // Тінь для іконки
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
@@ -830,7 +833,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       .withOpacity(0.9),
                                                   fontWeight: FontWeight.w500,
                                                   height: 1.2,
-                                                  shadows: textShadows,
+                                                  shadows:
+                                                      textShadows, // Додали тінь
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -852,7 +856,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   style: TextStyle(
                                                     fontSize: 10,
                                                     color: Colors.white,
-                                                    shadows: textShadows,
+                                                    shadows:
+                                                        textShadows, // Додали тінь
                                                   ),
                                                 ),
                                               ),
@@ -867,6 +872,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 10),
 
+                              // --- ІНДИКАТОР ОСТАННЬОГО ОНОВЛЕННЯ ---
                               if (_lastUpdated != null)
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 50),
@@ -885,7 +891,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.white.withOpacity(0.9),
-                                          shadows: textShadows,
+                                          shadows: textShadows, // Додали тінь
                                         ),
                                       ),
                                     ],
@@ -899,7 +905,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: AnimatedWeatherIcon(
                                   iconCode: _weather!.iconCode,
                                   size: 160,
-                                  partOfDay: _weather!.partOfDay,
+                                  partOfDay: _weather!
+                                      .partOfDay, // Передаємо частину дня!
                                 ),
                               ),
 
@@ -948,6 +955,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 40),
 
+                              // --- ПОГОДИННИЙ ПРОГНОЗ ---
                               if (_weather!.hourlyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 300),
@@ -985,7 +993,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             forecast: _weather!.hourlyForecast,
                                             formatTempNumber:
                                                 _formatTempOnlyNumber,
-                                            textShadows: textShadows,
+                                            textShadows:
+                                                textShadows, // Передали глобальну тінь
                                           ),
                                         ),
                                       ),
@@ -995,6 +1004,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 30),
                               ],
 
+                              // --- ПАНЕЛЬ ДЕТАЛЕЙ ---
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 400),
                                 child: _buildGlassContainer(
@@ -1084,6 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 30),
 
+                              // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) З ФІКСОВАНИМ ВИРІВНЮВАННЯМ ---
                               if (_weather!.dailyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 450),
@@ -1127,6 +1138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           child: Row(
                                             children: [
+                                              // 1. День тижня (фіксована ширина)
                                               SizedBox(
                                                 width: 100,
                                                 child: Text(
@@ -1141,6 +1153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
+                                              // 2. Іконка (центрується у гнучкому просторі)
                                               Expanded(
                                                 child: Align(
                                                   alignment: Alignment.center,
@@ -1150,6 +1163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
+                                              // 3. Температура (фіксована ширина, завжди притиснута вправо)
                                               SizedBox(
                                                 width: 90,
                                                 child: Row(
@@ -1215,6 +1229,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Icon(icon, color: Colors.white, size: 28, shadows: textShadows),
+          // Додали тінь і білий колір для іконки
           const SizedBox(height: 5),
           Text(
             label,
@@ -1222,7 +1237,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white70,
               fontSize: 12,
               shadows: textShadows,
-            ),
+            ), // Додали тінь
           ),
           const SizedBox(height: 2),
           Text(
@@ -1231,7 +1246,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: valueColor ?? Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              shadows: textShadows,
+              shadows: textShadows, // Додали тінь
             ),
             textAlign: TextAlign.center,
           ),
@@ -1352,7 +1367,7 @@ class HourlyTemperatureChart extends StatelessWidget {
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
-                        shadows: textShadows,
+                        shadows: textShadows, // Тінь для часу на графіку
                       ),
                     ),
                     AnimatedWeatherIcon(iconCode: hourly.iconCode, size: 45),
@@ -1362,7 +1377,7 @@ class HourlyTemperatureChart extends StatelessWidget {
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        shadows: textShadows,
+                        shadows: textShadows, // Тінь для температури на графіку
                       ),
                     ),
                   ],
@@ -1419,12 +1434,13 @@ class _TemperatureChartPainter extends CustomPainter {
       }
     }
 
-    // ОПТИМІЗАЦІЯ: Прибрали MaskFilter.blur для графіка
+    // Тінь для лінії графіка (теж робить її читабельною на будь-якому фоні)
     final lineShadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
+      ..color = Colors.black.withOpacity(0.4)
       ..strokeWidth = 4.0
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
     final linePaint = Paint()
       ..color = Colors.white.withOpacity(0.9)
@@ -1432,11 +1448,13 @@ class _TemperatureChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    // Спочатку малюємо тінь від лінії
     canvas.save();
     canvas.translate(0, 2);
     canvas.drawPath(path, lineShadowPaint);
     canvas.restore();
 
+    // Потім саму лінію
     canvas.drawPath(path, linePaint);
 
     final fillPath = Path.from(path)
@@ -1457,9 +1475,11 @@ class _TemperatureChartPainter extends CustomPainter {
     final dotPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
+
     final dotShadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.3)
-      ..style = PaintingStyle.fill;
+      ..color = Colors.black.withOpacity(0.5)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     for (var point in points) {
       canvas.drawCircle(point + const Offset(0, 1), 5.0, dotShadowPaint);
