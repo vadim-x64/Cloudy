@@ -197,8 +197,8 @@ class WeatherModel {
     if ((timeInHours - sunriseTime).abs() <= 0.75) return 'Світанок';
     if ((timeInHours - sunsetTime).abs() <= 0.75) return 'Сутінки';
     if (timeInHours > sunriseTime && localTime.hour < 12) return 'Ранок';
-    if (localTime.hour == 12) return 'Полудень';
-    if (localTime.hour > 12 && timeInHours < sunsetTime) return 'День';
+    if (localTime.hour == 12) return 'День';
+    if (localTime.hour > 12 && timeInHours < sunsetTime) return 'Полудень';
     if (timeInHours > sunsetTime && localTime.hour < 23) return 'Вечір';
     return 'Ніч';
   }

@@ -218,7 +218,7 @@ class WeatherIconPainter extends CustomPainter {
       final Random rand = Random(42);
       for (int i = 0; i < 10; i++) {
         double sx = rand.nextDouble() * size.width;
-        double sy = rand.nextDouble() * size.height * 0.9;
+        double sy = rand.nextDouble() * size.height * 0.6;
         double opacity = (sin((animationValue * pi * 4) + i) + 1) / 2;
         starPaint.color = Colors.white.withOpacity(opacity * 0.8);
 

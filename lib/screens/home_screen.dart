@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
         baseColors = [Colors.blue.shade800, Colors.blue.shade500];
         break;
       case 'День':
-        baseColors = [Colors.lightBlue.shade300, Colors.white];
+        baseColors = [Colors.lightBlue.shade400, Colors.lightBlue.shade100];
         break;
       case 'Вечір':
         baseColors = [Colors.orange.shade600, Colors.orange.shade300];
