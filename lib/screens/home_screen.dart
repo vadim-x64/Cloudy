@@ -28,12 +28,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   TempUnit _selectedUnit = TempUnit.celsius;
 
-  // Стиль для тексту з тінями для кращої читабельності
+  // Стиль для тексту з тінями: зробили тінь трохи темнішою для ідеального контрасту
   final List<Shadow> textShadows = [
     const Shadow(
       offset: Offset(1.0, 1.0),
-      blurRadius: 5.0,
-      color: Colors.black54,
+      blurRadius: 4.0,
+      color: Colors.black87,
     ),
   ];
 
@@ -234,28 +234,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Color> _getBackgroundColors() {
     if (_weather == null) return [Colors.blue.shade900, Colors.blue.shade400];
-    bool isDay = _weather!.isDayTime;
+
+    String part = _weather!.partOfDay;
     String condition = _weather!.mainCondition.toLowerCase();
 
-    if (condition.contains('rain') || condition.contains('drizzle')) {
-      return isDay
-          ? [Colors.blueGrey.shade700, Colors.grey.shade400]
-          : [Colors.grey.shade900, Colors.blueGrey.shade900];
-    } else if (condition.contains('snow')) {
-      return isDay
-          ? [Colors.blue.shade200, Colors.white]
-          : [Colors.blueGrey.shade900, Colors.blue.shade800];
-    } else if (condition.contains('cloud') ||
+    List<Color> baseColors;
+
+    switch (part) {
+      case 'Світанок':
+      case 'Ранок':
+        baseColors = [Colors.deepOrange.shade800, Colors.orange.shade600];
+        break;
+      case 'Полудень':
+        baseColors = [Colors.blue.shade800, Colors.blue.shade500];
+        break;
+      case 'День':
+        baseColors = [Colors.lightBlue.shade300, Colors.white];
+        break;
+      case 'Вечір':
+        baseColors = [Colors.orange.shade600, Colors.orange.shade300];
+        break;
+      case 'Сутінки':
+        baseColors = [const Color(0xFF1A237E), const Color(0xFF6A1B9A)];
+        break;
+      case 'Ніч':
+      default:
+        baseColors = [const Color(0xFF1A1A1A), const Color(0xFF424242)];
+        break;
+    }
+
+    if (condition.contains('rain') ||
+        condition.contains('drizzle') ||
+        condition.contains('snow') ||
         condition.contains('fog') ||
         condition.contains('mist')) {
-      return isDay
-          ? [Colors.blue.shade600, Colors.grey.shade300]
-          : [Colors.indigo.shade900, Colors.blueGrey.shade900];
-    } else {
-      return isDay
-          ? [Colors.blue.shade500, Colors.lightBlue.shade200]
-          : [const Color(0xFF0D1B2A), const Color(0xFF1B263B)];
+      return baseColors
+          .map((c) => Color.lerp(c, Colors.blueGrey.shade800, 0.55)!)
+          .toList();
+    } else if (condition.contains('cloud')) {
+      return baseColors
+          .map((c) => Color.lerp(c, Colors.grey.shade400, 0.25)!)
+          .toList();
     }
+
+    return baseColors;
   }
 
   String? _getBackgroundLottie() {
@@ -365,9 +387,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 2,
                     width: isMajor ? 12 : 6,
                     decoration: const BoxDecoration(
-                      color: Colors.white70,
+                      color: Colors.white,
                       boxShadow: [
-                        BoxShadow(color: Colors.black45, blurRadius: 2),
+                        BoxShadow(
+                          color: Colors.black87,
+                          blurRadius: 3,
+                          offset: Offset(1, 1),
+                        ),
                       ],
                     ),
                   );
@@ -412,7 +438,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // 1. Плавно анімований градієнтний фон
             AnimatedContainer(
               duration: const Duration(seconds: 2),
               curve: Curves.easeInOut,
@@ -427,7 +452,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // 2. Анімований Lottie-фон (залишаємо для загальної атмосфери хмар на задньому плані)
             if (bgLottie != null)
               Positioned.fill(
                 child: Opacity(
@@ -440,7 +464,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // 3. Основний контент з Pull-To-Refresh
             SafeArea(
               child: RefreshIndicator(
                 onRefresh: _loadWeatherByLocation,
@@ -709,7 +732,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           Column(
                             key: weatherKey,
                             children: [
-                              // --- ДВІ КАРТКИ: МІСЦЕ ТА ЧАС ---
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 0),
                                 child: IntrinsicHeight(
@@ -728,10 +750,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              const Icon(
+                                              Icon(
                                                 Icons.location_on_outlined,
                                                 color: Colors.white,
                                                 size: 28,
+                                                shadows:
+                                                    textShadows, // Тінь для іконки
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
@@ -753,9 +777,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.white
-                                                      .withOpacity(0.8),
+                                                      .withOpacity(0.9),
                                                   fontWeight: FontWeight.w500,
                                                   height: 1.2,
+                                                  shadows:
+                                                      textShadows, // Додали тінь
                                                 ),
                                                 textAlign: TextAlign.center,
                                                 maxLines: 2,
@@ -777,10 +803,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              const Icon(
+                                              Icon(
                                                 Icons.schedule,
                                                 color: Colors.white,
                                                 size: 28,
+                                                shadows:
+                                                    textShadows, // Тінь для іконки
                                               ),
                                               const SizedBox(height: 8),
                                               Text(
@@ -802,9 +830,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.white
-                                                      .withOpacity(0.8),
+                                                      .withOpacity(0.9),
                                                   fontWeight: FontWeight.w500,
                                                   height: 1.2,
+                                                  shadows:
+                                                      textShadows, // Додали тінь
                                                 ),
                                                 textAlign: TextAlign.center,
                                               ),
@@ -823,9 +853,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                                 child: Text(
                                                   _weather!.partOfDay,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 10,
                                                     color: Colors.white,
+                                                    shadows:
+                                                        textShadows, // Додали тінь
                                                   ),
                                                 ),
                                               ),
@@ -849,15 +881,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       Icon(
                                         Icons.update,
-                                        color: Colors.white.withOpacity(0.7),
+                                        color: Colors.white.withOpacity(0.9),
                                         size: 14,
+                                        shadows: textShadows,
                                       ),
                                       const SizedBox(width: 5),
                                       Text(
                                         'Дані оновлено востаннє о ${DateFormat('HH:mm').format(_lastUpdated!)}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withOpacity(0.9),
+                                          shadows: textShadows, // Додали тінь
                                         ),
                                       ),
                                     ],
@@ -866,12 +900,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 20),
 
-                              // --- ТУТ НАША НОВА КАСТОМНА ІКОНКА ---
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 150),
                                 child: AnimatedWeatherIcon(
                                   iconCode: _weather!.iconCode,
                                   size: 160,
+                                  partOfDay: _weather!
+                                      .partOfDay, // Передаємо частину дня!
                                 ),
                               ),
 
@@ -920,7 +955,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 40),
 
-                              // --- ПОГОДИННИЙ ПРОГНОЗ З ГРАФІКОМ І НОВИМИ ІКОНКАМИ ---
+                              // --- ПОГОДИННИЙ ПРОГНОЗ ---
                               if (_weather!.hourlyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 300),
@@ -958,6 +993,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             forecast: _weather!.hourlyForecast,
                                             formatTempNumber:
                                                 _formatTempOnlyNumber,
+                                            textShadows:
+                                                textShadows, // Передали глобальну тінь
                                           ),
                                         ),
                                       ),
@@ -1057,7 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 30),
 
-                              // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) З НОВИМИ ІКОНКАМИ ---
+                              // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) З ФІКСОВАНИМ ВИРІВНЮВАННЯМ ---
                               if (_weather!.dailyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
                                   delay: const Duration(milliseconds: 450),
@@ -1100,48 +1137,64 @@ class _HomeScreenState extends State<HomeScreen> {
                                             vertical: 8,
                                           ),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
                                             children: [
+                                              // 1. День тижня (фіксована ширина)
                                               SizedBox(
                                                 width: 100,
                                                 child: Text(
                                                   _getUkrainianWeekday(
                                                     daily.date.weekday,
                                                   ),
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w500,
+                                                    shadows: textShadows,
                                                   ),
                                                 ),
                                               ),
-                                              // Замість Image.network -> AnimatedWeatherIcon
-                                              AnimatedWeatherIcon(
-                                                iconCode: daily.iconCode,
-                                                size:
-                                                    45, // Менший розмір для списку
+                                              // 2. Іконка (центрується у гнучкому просторі)
+                                              Expanded(
+                                                child: Align(
+                                                  alignment: Alignment.center,
+                                                  child: AnimatedWeatherIcon(
+                                                    iconCode: daily.iconCode,
+                                                    size: 45,
+                                                  ),
+                                                ),
                                               ),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    _formatTemp(daily.minTemp),
-                                                    style: const TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 16,
+                                              // 3. Температура (фіксована ширина, завжди притиснута вправо)
+                                              SizedBox(
+                                                width: 90,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      _formatTemp(
+                                                        daily.minTemp,
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 16,
+                                                        shadows: textShadows,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Text(
-                                                    _formatTemp(daily.maxTemp),
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 16,
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      _formatTemp(
+                                                        daily.maxTemp,
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                        shadows: textShadows,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -1175,11 +1228,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: Colors.white70, size: 28),
+          Icon(icon, color: Colors.white, size: 28, shadows: textShadows),
+          // Додали тінь і білий колір для іконки
           const SizedBox(height: 5),
           Text(
             label,
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              shadows: textShadows,
+            ), // Додали тінь
           ),
           const SizedBox(height: 2),
           Text(
@@ -1188,13 +1246,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: valueColor ?? Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              shadows: const [
-                Shadow(
-                  offset: Offset(0.5, 0.5),
-                  blurRadius: 2.0,
-                  color: Colors.black45,
-                ),
-              ],
+              shadows: textShadows, // Додали тінь
             ),
             textAlign: TextAlign.center,
           ),
@@ -1271,17 +1323,18 @@ class _AnimatedEntranceState extends State<AnimatedEntrance>
 class HourlyTemperatureChart extends StatelessWidget {
   final List<HourlyForecast> forecast;
   final String Function(double) formatTempNumber;
+  final List<Shadow> textShadows;
 
   const HourlyTemperatureChart({
     super.key,
     required this.forecast,
     required this.formatTempNumber,
+    required this.textShadows,
   });
 
   @override
   Widget build(BuildContext context) {
-    const double itemWidth =
-        65.0; // Трохи збільшив ширину для кращого вигляду кастомних іконок
+    const double itemWidth = 65.0;
     final double chartWidth = forecast.length * itemWidth;
 
     return SizedBox(
@@ -1311,29 +1364,20 @@ class HourlyTemperatureChart extends StatelessWidget {
                   children: [
                     Text(
                       DateFormat('HH:mm').format(hourly.time),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
+                        shadows: textShadows, // Тінь для часу на графіку
                       ),
                     ),
-                    // Замість Image.network -> AnimatedWeatherIcon
-                    AnimatedWeatherIcon(
-                      iconCode: hourly.iconCode,
-                      size: 45, // Оптимальний розмір для графіка
-                    ),
+                    AnimatedWeatherIcon(iconCode: hourly.iconCode, size: 45),
                     Text(
                       '${formatTempNumber(hourly.temperature)}°',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 3.0,
-                            color: Colors.black54,
-                          ),
-                        ],
+                        shadows: textShadows, // Тінь для температури на графіку
                       ),
                     ),
                   ],
@@ -1390,12 +1434,27 @@ class _TemperatureChartPainter extends CustomPainter {
       }
     }
 
+    // Тінь для лінії графіка (теж робить її читабельною на будь-якому фоні)
+    final lineShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..strokeWidth = 4.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
     final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
+      ..color = Colors.white.withOpacity(0.9)
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    // Спочатку малюємо тінь від лінії
+    canvas.save();
+    canvas.translate(0, 2);
+    canvas.drawPath(path, lineShadowPaint);
+    canvas.restore();
+
+    // Потім саму лінію
     canvas.drawPath(path, linePaint);
 
     final fillPath = Path.from(path)
@@ -1417,7 +1476,13 @@ class _TemperatureChartPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
+    final dotShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.5)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
     for (var point in points) {
+      canvas.drawCircle(point + const Offset(0, 1), 5.0, dotShadowPaint);
       canvas.drawCircle(point, 4.0, dotPaint);
     }
   }

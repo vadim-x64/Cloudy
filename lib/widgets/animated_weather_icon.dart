@@ -6,11 +6,13 @@ enum WeatherType { clear, partlyCloudy, cloudy, rain, snow, thunderstorm, fog }
 class AnimatedWeatherIcon extends StatefulWidget {
   final String iconCode;
   final double size;
+  final String? partOfDay;
 
   const AnimatedWeatherIcon({
     super.key,
     required this.iconCode,
     this.size = 100,
+    this.partOfDay,
   });
 
   @override
@@ -70,6 +72,7 @@ class _AnimatedWeatherIconState extends State<AnimatedWeatherIcon>
               animationValue: _controller.value,
               type: type,
               isDay: isDay,
+              partOfDay: widget.partOfDay,
             ),
           );
         },
@@ -82,11 +85,13 @@ class WeatherIconPainter extends CustomPainter {
   final double animationValue;
   final WeatherType type;
   final bool isDay;
+  final String? partOfDay;
 
   WeatherIconPainter({
     required this.animationValue,
     required this.type,
     required this.isDay,
+    this.partOfDay,
   });
 
   @override
@@ -94,17 +99,37 @@ class WeatherIconPainter extends CustomPainter {
     final double center = size.width / 2;
     final Offset centerOffset = Offset(center, center);
 
+    bool isMorning = partOfDay == 'Світанок' || partOfDay == 'Ранок';
+    bool isEvening = partOfDay == 'Сутінки' || partOfDay == 'Вечір';
+    bool isNight = partOfDay == 'Ніч';
+
     // 1. НАЙДАЛЬШИЙ ФОН: Сонце або Місяць
     if (type == WeatherType.clear || type == WeatherType.partlyCloudy) {
-      if (isDay) {
-        _drawSun(
+      if (isMorning) {
+        _drawHorizonSun(
+          canvas,
+          size,
+          centerOffset,
+          isPartial: type == WeatherType.partlyCloudy,
+          isSunset: false,
+        );
+      } else if (isEvening) {
+        _drawHorizonSun(
+          canvas,
+          size,
+          centerOffset,
+          isPartial: type == WeatherType.partlyCloudy,
+          isSunset: true,
+        );
+      } else if (isNight || (partOfDay == null && !isDay)) {
+        _drawMoonAndStars(
           canvas,
           size,
           centerOffset,
           isPartial: type == WeatherType.partlyCloudy,
         );
       } else {
-        _drawMoonAndStars(
+        _drawSun(
           canvas,
           size,
           centerOffset,
@@ -139,23 +164,29 @@ class WeatherIconPainter extends CustomPainter {
   }
 
   void _drawSun(
-    Canvas canvas,
-    Size size,
-    Offset center, {
-    bool isPartial = false,
-  }) {
+      Canvas canvas,
+      Size size,
+      Offset center, {
+        bool isPartial = false,
+      }) {
     final double radius = size.width * (isPartial ? 0.2 : 0.25);
     final Offset sunCenter = isPartial
         ? Offset(size.width * 0.65, size.height * 0.35)
         : center;
 
+    // Тінь ядра сонця (робить його видимим на помаранчевих фонах)
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(sunCenter + const Offset(1, 2), radius * 1.05, shadowPaint);
+
     // Сяйво (Glow) навколо сонця
     final glowPaint = Paint()
-      ..color = Colors.orangeAccent.withOpacity(0.4)
+      ..color = Colors.orangeAccent.withOpacity(0.5)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
     canvas.drawCircle(sunCenter, radius * 1.6, glowPaint);
 
-    // Ядро сонця (статичне, без пульсації)
+    // Ядро сонця
     final paint = Paint()..color = Colors.amber;
     canvas.drawCircle(sunCenter, radius, paint);
 
@@ -167,16 +198,29 @@ class WeatherIconPainter extends CustomPainter {
     final rayPaint = Paint()
       ..color = Colors.amber
       ..strokeWidth = rayStroke
-      ..strokeCap = StrokeCap.round; // Заокруглені кінчики променів
+      ..strokeCap = StrokeCap.round;
+
+    final rayShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..strokeWidth = rayStroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
     canvas.save();
     canvas.translate(sunCenter.dx, sunCenter.dy);
-    // Дуже повільне обертання (в 4 рази повільніше: pi * 0.5 замість 2 * pi)
+    // Дуже повільне обертання
     canvas.rotate(animationValue * pi * 0.5);
 
     for (int i = 0; i < rayCount; i++) {
       canvas.rotate((2 * pi) / rayCount);
-      // Малюємо промінці з невеликим відступом від центру
+
+      // Тінь промінця
+      canvas.drawLine(
+        Offset(1, radius + radius * 0.25 + 2),
+        Offset(1, radius + radius * 0.25 + rayLength + 2),
+        rayShadowPaint,
+      );
+      // Сам промінець
       canvas.drawLine(
         Offset(0, radius + radius * 0.25),
         Offset(0, radius + radius * 0.25 + rayLength),
@@ -187,11 +231,11 @@ class WeatherIconPainter extends CustomPainter {
   }
 
   void _drawMoonAndStars(
-    Canvas canvas,
-    Size size,
-    Offset center, {
-    bool isPartial = false,
-  }) {
+      Canvas canvas,
+      Size size,
+      Offset center, {
+        bool isPartial = false,
+      }) {
     final double radius = size.width * (isPartial ? 0.2 : 0.25);
     final Offset moonCenter = isPartial
         ? Offset(size.width * 0.75, size.height * 0.3)
@@ -199,6 +243,10 @@ class WeatherIconPainter extends CustomPainter {
 
     if (!isPartial) {
       final starPaint = Paint()..style = PaintingStyle.fill;
+      final starShadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
       final Random rand = Random(42);
       for (int i = 0; i < 10; i++) {
         double sx = rand.nextDouble() * size.width;
@@ -206,25 +254,23 @@ class WeatherIconPainter extends CustomPainter {
         double opacity = (sin((animationValue * pi * 4) + i) + 1) / 2;
         starPaint.color = Colors.white.withOpacity(opacity * 0.8);
 
-        // Малюємо зорю у формі іскринки (чотирикутна зірка з плавними вигинами)
         double starRadius = size.width * (0.02 + rand.nextDouble() * 0.015);
         Path starPath = Path();
-        starPath.moveTo(sx, sy - starRadius); // Верхня точка
-        // Криві, які тягнуться до центру створюючи ефект "втягнутих" кутів
-        starPath.quadraticBezierTo(sx, sy, sx + starRadius, sy); // Правий кут
-        starPath.quadraticBezierTo(sx, sy, sx, sy + starRadius); // Нижній кут
-        starPath.quadraticBezierTo(sx, sy, sx - starRadius, sy); // Лівий кут
-        starPath.quadraticBezierTo(
-          sx,
-          sy,
-          sx,
-          sy - starRadius,
-        ); // Повернення вгору
+        starPath.moveTo(sx, sy - starRadius);
+        starPath.quadraticBezierTo(sx, sy, sx + starRadius, sy);
+        starPath.quadraticBezierTo(sx, sy, sx, sy + starRadius);
+        starPath.quadraticBezierTo(sx, sy, sx - starRadius, sy);
+        starPath.quadraticBezierTo(sx, sy, sx, sy - starRadius);
         starPath.close();
 
+        // Тінь зірки
+        canvas.drawPath(starPath.shift(const Offset(1, 1)), starShadowPaint);
+        // Сама зірка
         canvas.drawPath(starPath, starPaint);
       }
     }
+
+    // Тінь місяця прибрано для кращого вигляду
 
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
 
@@ -244,12 +290,118 @@ class WeatherIconPainter extends CustomPainter {
     canvas.restore();
   }
 
+  void _drawHorizonSun(
+      Canvas canvas,
+      Size size,
+      Offset center, {
+        bool isPartial = false,
+        bool isSunset = false,
+      }) {
+    final double radius = size.width * (isPartial ? 0.2 : 0.25);
+    final Offset sunCenter = isPartial
+        ? Offset(size.width * 0.65, size.height * 0.35)
+        : center;
+
+    // Опускаємо сонце трохи нижче для ефекту горизонту
+    final Offset adjustedCenter = Offset(sunCenter.dx, sunCenter.dy + radius * 0.4);
+
+    // Лінія горизонту (зріз)
+    final double horizonY = adjustedCenter.dy + radius * 0.2;
+
+    // Зранку жовте сонце, ввечері - помаранчеве
+    final Color sunColor = isSunset ? Colors.deepOrangeAccent : Colors.amber;
+    final Color glowColor = isSunset ? Colors.deepOrange : Colors.orangeAccent;
+
+    canvas.save();
+    // Обрізаємо все, що нижче горизонту
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, horizonY));
+
+    // Тінь ядра
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(adjustedCenter + const Offset(1, 2), radius * 1.05, shadowPaint);
+
+    // Сяйво
+    final glowPaint = Paint()
+      ..color = glowColor.withOpacity(0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawCircle(adjustedCenter, radius * 1.6, glowPaint);
+
+    // Ядро
+    final paint = Paint()..color = sunColor;
+    canvas.drawCircle(adjustedCenter, radius, paint);
+
+    // Промінці
+    final double rayLength = radius * 0.55;
+    final int rayCount = 8;
+    final double rayStroke = size.width * 0.035;
+
+    final rayPaint = Paint()
+      ..color = sunColor
+      ..strokeWidth = rayStroke
+      ..strokeCap = StrokeCap.round;
+
+    final rayShadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..strokeWidth = rayStroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    canvas.save();
+    canvas.translate(adjustedCenter.dx, adjustedCenter.dy);
+    // Обертаємо: ранок в один бік, вечір - в інший
+    canvas.rotate(animationValue * pi * 0.5 * (isSunset ? -1 : 1));
+
+    for (int i = 0; i < rayCount; i++) {
+      canvas.rotate((2 * pi) / rayCount);
+
+      canvas.drawLine(
+        Offset(1, radius + radius * 0.25 + 2),
+        Offset(1, radius + radius * 0.25 + rayLength + 2),
+        rayShadowPaint,
+      );
+      canvas.drawLine(
+        Offset(0, radius + radius * 0.25),
+        Offset(0, radius + radius * 0.25 + rayLength),
+        rayPaint,
+      );
+    }
+    canvas.restore(); // Відновлюємо обертання
+    canvas.restore(); // Відновлюємо обрізку (clip)
+
+    // Малюємо лінію горизонту поверх всього
+    final horizonPaint = Paint()
+      ..color = sunColor.withOpacity(0.8)
+      ..strokeWidth = size.width * 0.02
+      ..strokeCap = StrokeCap.round;
+
+    final horizonShadow = Paint()
+      ..color = Colors.black.withOpacity(0.4)
+      ..strokeWidth = size.width * 0.02
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    // Лінія горизонту трохи ширша за саме сонце
+    double hWidth = radius * 1.8;
+    canvas.drawLine(
+      Offset(adjustedCenter.dx - hWidth + 1, horizonY + 2),
+      Offset(adjustedCenter.dx + hWidth + 1, horizonY + 2),
+      horizonShadow,
+    );
+    canvas.drawLine(
+      Offset(adjustedCenter.dx - hWidth, horizonY),
+      Offset(adjustedCenter.dx + hWidth, horizonY),
+      horizonPaint,
+    );
+  }
+
   void _drawClouds(Canvas canvas, Size size, Offset center) {
     final double floatY = sin(animationValue * pi * 2) * (size.height * 0.02);
     final double floatX = cos(animationValue * pi * 2) * (size.width * 0.015);
 
     final Color cloudColor =
-        type == WeatherType.rain || type == WeatherType.thunderstorm
+    type == WeatherType.rain || type == WeatherType.thunderstorm
         ? Colors.blueGrey.shade300
         : Colors.white;
 
@@ -257,18 +409,17 @@ class WeatherIconPainter extends CustomPainter {
       ..color = cloudColor
       ..style = PaintingStyle.fill;
 
+    // Збільшив прозорість та розмиття тіні для більшого контрасту
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.12)
+      ..color = Colors.black.withOpacity(0.35)
       ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
 
-    // Новий ідеальний алгоритм побудови пухкої хмари
     Path buildCloudPath(double cx, double cy, double scale) {
       Path path = Path();
       double w = size.width * 0.9 * scale;
       double h = size.width * 0.18 * scale;
 
-      // База хмари (заокруглений прямокутник)
       Rect baseRect = Rect.fromCenter(
         center: Offset(cx, cy + h * 0.5),
         width: w,
@@ -276,7 +427,6 @@ class WeatherIconPainter extends CustomPainter {
       );
       path.addRRect(RRect.fromRectAndRadius(baseRect, Radius.circular(h / 2)));
 
-      // Центральна (найбільша) частина
       path.addOval(
         Rect.fromCircle(
           center: Offset(cx - w * 0.05, cy - h * 0.3),
@@ -284,7 +434,6 @@ class WeatherIconPainter extends CustomPainter {
         ),
       );
 
-      // Права пухка частина
       path.addOval(
         Rect.fromCircle(
           center: Offset(cx + w * 0.28, cy + h * 0.1),
@@ -292,7 +441,6 @@ class WeatherIconPainter extends CustomPainter {
         ),
       );
 
-      // Ліва пухка частина
       path.addOval(
         Rect.fromCircle(
           center: Offset(cx - w * 0.32, cy + h * 0.1),
@@ -309,7 +457,8 @@ class WeatherIconPainter extends CustomPainter {
         size.height * 0.35 + floatY * 0.5,
         0.85,
       );
-      canvas.drawPath(backCloud, shadowPaint);
+      // Малюємо тінь для задньої хмари, змістивши її трохи вниз
+      canvas.drawPath(backCloud.shift(const Offset(0, 4)), shadowPaint);
       canvas.drawPath(backCloud, Paint()..color = cloudColor.withOpacity(0.7));
     }
 
@@ -317,7 +466,8 @@ class WeatherIconPainter extends CustomPainter {
     double mainY = size.height * 0.5 + floatY;
     Path mainCloud = buildCloudPath(mainX, mainY, 1.0);
 
-    canvas.drawPath(mainCloud, shadowPaint);
+    // Малюємо тінь для передньої хмари
+    canvas.drawPath(mainCloud.shift(const Offset(0, 4)), shadowPaint);
     canvas.drawPath(mainCloud, cloudPaint);
   }
 
@@ -327,22 +477,31 @@ class WeatherIconPainter extends CustomPainter {
       ..strokeWidth = size.width * 0.03
       ..strokeCap = StrokeCap.round;
 
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.3)
+      ..strokeWidth = size.width * 0.03
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
     final Random rand = Random(123);
-    final int dropsCount = 12; // Трохи більше крапель
+    final int dropsCount = 12;
 
     for (int i = 0; i < dropsCount; i++) {
-      // Звужуємо зону дощу, щоб він падав суворо з-під хмари (між 35% і 65% ширини)
-      double startX =
-          size.width * 0.2 + rand.nextDouble() * (size.width * 0.7);
+      double startX = size.width * 0.2 + rand.nextDouble() * (size.width * 0.7);
       double speedOffset = rand.nextDouble() * 3 + 1.2;
       double progress = (animationValue * speedOffset + (i * 0.2)) % 1.0;
 
-      // Починаємо малювати вище, за хмарою
       double startY = size.height * 0.45 + progress * (size.height * 0.55);
       double endY = startY + size.height * 0.12;
 
       if (startY < size.height) {
-        // Легкий нахил дощу ліворуч
+        // Тінь дощу
+        canvas.drawLine(
+          Offset(startX + 1, startY + 1),
+          Offset(startX - size.width * 0.03 + 1, endY + 1),
+          shadowPaint,
+        );
+        // Сам дощ
         canvas.drawLine(
           Offset(startX, startY),
           Offset(startX - size.width * 0.03, endY),
@@ -357,11 +516,15 @@ class WeatherIconPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.3)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
     final Random rand = Random(777);
     final int flakesCount = 7;
 
     for (int i = 0; i < flakesCount; i++) {
-      // Сніг також падає з-під хмари
       double startX = size.width * 0.3 + rand.nextDouble() * (size.width * 0.4);
       double speedOffset = rand.nextDouble() * 1.5 + 0.5;
       double progress = (animationValue * speedOffset + (i * 0.15)) % 1.0;
@@ -371,6 +534,9 @@ class WeatherIconPainter extends CustomPainter {
           startX + sin((animationValue * pi * 4) + i) * (size.width * 0.05);
 
       if (y < size.height) {
+        // Тінь снігу
+        canvas.drawCircle(Offset(x + 1, y + 1), size.width * 0.025, shadowPaint);
+        // Сніг
         canvas.drawCircle(Offset(x, y), size.width * 0.025, paint);
       }
     }
@@ -379,7 +545,7 @@ class WeatherIconPainter extends CustomPainter {
   void _drawLightning(Canvas canvas, Size size) {
     bool shouldFlash =
         (animationValue > 0.1 && animationValue < 0.15) ||
-        (animationValue > 0.6 && animationValue < 0.63);
+            (animationValue > 0.6 && animationValue < 0.63);
 
     if (!shouldFlash) return;
 
@@ -389,9 +555,15 @@ class WeatherIconPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round;
 
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.6)
+      ..strokeWidth = size.width * 0.035
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+
     Path lightning = Path();
     double startX = size.width * 0.5;
-    // Починаємо блискавку вище, щоб її початок був за хмарою
     double startY = size.height * 0.4;
 
     lightning.moveTo(startX, startY);
@@ -399,6 +571,7 @@ class WeatherIconPainter extends CustomPainter {
     lightning.lineTo(startX + size.width * 0.08, startY + size.height * 0.2);
     lightning.lineTo(startX - size.width * 0.15, startY + size.height * 0.45);
 
+    canvas.drawPath(lightning.shift(const Offset(2, 2)), shadowPaint);
     canvas.drawPath(lightning, paint);
   }
 
