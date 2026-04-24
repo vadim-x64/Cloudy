@@ -25,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _lastUpdated;
   bool _isLoading = false;
   String? _errorMessage;
-
   TempUnit _selectedUnit = TempUnit.celsius;
 
   @override
@@ -99,8 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (e is LocationException) {
         _showLocationErrorDialog(e);
         setState(
-              () => _errorMessage =
-          'Немає доступу до геолокації. Введіть місто вручну.',
+          () => _errorMessage =
+              'Немає доступу до геолокації. Введіть місто вручну.',
         );
       } else {
         setState(() => _errorMessage = 'Сталася помилка: $e');
@@ -213,8 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _cleanWeatherDescription(String raw) {
     String desc = raw
         .toLowerCase()
-        .replaceAll('рвані хмари', 'хмарно з проясненнями')
-        .replaceAll('уривчасті хмари', 'мінлива хмарність')
+        .replaceAll('часткова хмарність', 'хмарно з проясненнями')
+        .replaceAll('місцями хмарно', 'мінлива хмарність')
         .replaceAll('кілька хмар', 'малохмарно')
         .replaceAll('чисте небо', 'ясно')
         .replaceAll('мряка', 'дрібний дощ');
@@ -375,9 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Container(
                     height: 2,
                     width: isMajor ? 12 : 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.white),
                   );
                 }),
               ),
@@ -460,84 +457,84 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Column(
                       children: [
-                        // --- ВЕРХНІЙ БЛОК: ПОШУК ТА КНОПКИ ---
                         Row(
                           children: [
                             Expanded(
                               child: Autocomplete<CitySuggestion>(
                                 optionsBuilder:
                                     (TextEditingValue textEditingValue) async {
-                                  return await _weatherService
-                                      .fetchCitySuggestions(
-                                    textEditingValue.text,
-                                  );
-                                },
+                                      return await _weatherService
+                                          .fetchCitySuggestions(
+                                            textEditingValue.text,
+                                          );
+                                    },
                                 displayStringForOption:
                                     (CitySuggestion option) => option.name,
                                 onSelected: _loadWeatherBySuggestion,
-                                fieldViewBuilder: (
-                                    context,
-                                    controller,
-                                    focusNode,
-                                    onEditingComplete,
+                                fieldViewBuilder:
+                                    (
+                                      context,
+                                      controller,
+                                      focusNode,
+                                      onEditingComplete,
                                     ) {
-                                  return ValueListenableBuilder<
-                                      TextEditingValue>(
-                                    valueListenable: controller,
-                                    builder: (context, value, child) {
-                                      return TextField(
-                                        controller: controller,
-                                        focusNode: focusNode,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: 'Пошук міста...',
-                                          hintStyle: const TextStyle(
-                                            color: Colors.white70,
-                                          ),
-                                          filled: true,
-                                          fillColor:
-                                          Colors.white.withOpacity(0.2),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                            BorderRadius.circular(25),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          prefixIcon: const Icon(
-                                            Icons.search,
-                                            color: Colors.white70,
-                                          ),
-                                          suffixIcon: value.text.isNotEmpty
-                                              ? IconButton(
-                                            icon: const Icon(
-                                              Icons.clear,
-                                              color: Colors.white70,
+                                      return ValueListenableBuilder<
+                                        TextEditingValue
+                                      >(
+                                        valueListenable: controller,
+                                        builder: (context, value, child) {
+                                          return TextField(
+                                            controller: controller,
+                                            focusNode: focusNode,
+                                            style: const TextStyle(
+                                              color: Colors.white,
                                             ),
-                                            onPressed: () {
-                                              controller.clear();
-                                              focusNode.unfocus();
-                                            },
-                                          )
-                                              : null,
-                                          contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            vertical: 0,
-                                          ),
-                                        ),
+                                            decoration: InputDecoration(
+                                              hintText: 'Пошук',
+                                              hintStyle: const TextStyle(
+                                                color: Colors.white70,
+                                              ),
+                                              filled: true,
+                                              fillColor: Colors.white
+                                                  .withOpacity(0.2),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(25),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              prefixIcon: const Icon(
+                                                Icons.search,
+                                                color: Colors.white70,
+                                              ),
+                                              suffixIcon: value.text.isNotEmpty
+                                                  ? IconButton(
+                                                      icon: const Icon(
+                                                        Icons.clear,
+                                                        color: Colors.white70,
+                                                      ),
+                                                      onPressed: () {
+                                                        controller.clear();
+                                                        focusNode.unfocus();
+                                                      },
+                                                    )
+                                                  : null,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 0,
+                                                  ),
+                                            ),
+                                          );
+                                        },
                                       );
                                     },
-                                  );
-                                },
-                                optionsViewBuilder:
-                                    (context, onSelected, options) {
+                                optionsViewBuilder: (context, onSelected, options) {
                                   return Align(
                                     alignment: Alignment.topLeft,
                                     child: Material(
                                       color: Colors.transparent,
                                       child: Container(
                                         width:
-                                        MediaQuery.of(context).size.width -
+                                            MediaQuery.of(context).size.width -
                                             130,
                                         margin: const EdgeInsets.only(top: 8),
                                         decoration: BoxDecoration(
@@ -561,8 +558,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                           shrinkWrap: true,
                                           itemCount: options.length,
                                           itemBuilder: (context, index) {
-                                            final option =
-                                            options.elementAt(index);
+                                            final option = options.elementAt(
+                                              index,
+                                            );
                                             return ListTile(
                                               title: Text(
                                                 option.name,
@@ -626,7 +624,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Text(
                                       '°F - Фаренгейт',
                                       style: TextStyle(
-                                        color: _selectedUnit == TempUnit.fahrenheit
+                                        color:
+                                            _selectedUnit == TempUnit.fahrenheit
                                             ? Colors.blueAccent
                                             : Colors.white,
                                       ),
@@ -664,8 +663,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 30),
-
-                        // --- ГОЛОВНА ІНФОРМАЦІЯ ---
                         if (_isLoading)
                           Padding(
                             padding: const EdgeInsets.only(top: 100),
@@ -676,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const SizedBox(height: 20),
                                 const Text(
-                                  'Зачекайте, отримуємо дані...',
+                                  'Чекайте хвильку, отримуємо дані...',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -701,449 +698,439 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           )
                         else if (_weather != null)
-                            Column(
-                              key: weatherKey,
-                              children: [
-                                AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 0),
-                                  child: IntrinsicHeight(
-                                    child: Row(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                      children: [
-                                        // 1. Картка "Локація"
-                                        Expanded(
-                                          child: _buildGlassContainer(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 16,
-                                              horizontal: 10,
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(
-                                                  Icons.location_on_outlined,
-                                                  color: Colors.white,
-                                                  size: 28,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  _weather!.cityName,
-                                                  style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                    height: 1.2,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  '${_weather!.region.isNotEmpty ? '${_weather!.region}\n' : ''}${_weather!.country}',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.white
-                                                        .withOpacity(0.9),
-                                                    fontWeight: FontWeight.w500,
-                                                    height: 1.2,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 15),
-                                        // 2. Картка "Час і дата"
-                                        Expanded(
-                                          child: _buildGlassContainer(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 16,
-                                              horizontal: 10,
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(
-                                                  Icons.schedule,
-                                                  color: Colors.white,
-                                                  size: 28,
-                                                ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  DateFormat('HH:mm')
-                                                      .format(_weather!.localTime),
-                                                  style: const TextStyle(
-                                                    fontSize: 26,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                    height: 1.1,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  '${_getUkrainianWeekday(_weather!.localTime.weekday)}\n${DateFormat('d MMMM', 'uk_UA').format(_weather!.localTime)}',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.white
-                                                        .withOpacity(0.9),
-                                                    fontWeight: FontWeight.w500,
-                                                    height: 1.2,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Container(
-                                                  padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withOpacity(0.2),
-                                                    borderRadius:
-                                                    BorderRadius.circular(10),
-                                                  ),
-                                                  child: Text(
-                                                    _weather!.partOfDay,
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-
-                                // --- ІНДИКАТОР ОСТАННЬОГО ОНОВЛЕННЯ ---
-                                if (_lastUpdated != null)
-                                  AnimatedEntrance(
-                                    delay: const Duration(milliseconds: 50),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.update,
-                                          color: Colors.white.withOpacity(0.9),
-                                          size: 14,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          'Дані оновлено востаннє о ${DateFormat('HH:mm').format(_lastUpdated!)}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white.withOpacity(0.9),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                const SizedBox(height: 20),
-
-                                AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 150),
-                                  child: AnimatedWeatherIcon(
-                                    iconCode: _weather!.iconCode,
-                                    size: 160,
-                                    partOfDay: _weather!.partOfDay,
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-
-                                AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 200),
+                          Column(
+                            key: weatherKey,
+                            children: [
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 0),
+                                child: IntrinsicHeight(
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      _buildThermometer(_weather!.temperature),
+                                      Expanded(
+                                        child: _buildGlassContainer(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 10,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_outlined,
+                                                color: Colors.white,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                _weather!.cityName,
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                  height: 1.2,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_weather!.region.isNotEmpty ? '${_weather!.region}\n' : ''}${_weather!.country}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white
+                                                      .withOpacity(0.9),
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.2,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
                                       const SizedBox(width: 15),
-                                      Text(
-                                        _formatTemp(_weather!.temperature) +
-                                            (_selectedUnit == TempUnit.celsius
-                                                ? 'C'
-                                                : ''),
-                                        style: const TextStyle(
-                                          fontSize: 80,
-                                          fontWeight: FontWeight.w200,
-                                          color: Colors.white,
-                                          height: 1.1,
+                                      Expanded(
+                                        child: _buildGlassContainer(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 10,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Icons.schedule,
+                                                color: Colors.white,
+                                                size: 28,
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                DateFormat(
+                                                  'HH:mm',
+                                                ).format(_weather!.localTime),
+                                                style: const TextStyle(
+                                                  fontSize: 26,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                  height: 1.1,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${_getUkrainianWeekday(_weather!.localTime.weekday)}\n${DateFormat('d MMMM', 'uk_UA').format(_weather!.localTime)}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white
+                                                      .withOpacity(0.9),
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.2,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                child: Text(
+                                                  _weather!.partOfDay,
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-
+                              ),
+                              const SizedBox(height: 10),
+                              if (_lastUpdated != null)
                                 AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 250),
-                                  child: Text(
-                                    _cleanWeatherDescription(
-                                      _weather!.description,
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1.2,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                const SizedBox(height: 40),
-
-                                // --- ПОГОДИННИЙ ПРОГНОЗ ---
-                                if (_weather!.hourlyForecast.isNotEmpty) ...[
-                                  AnimatedEntrance(
-                                    delay: const Duration(milliseconds: 300),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Прогноз на 24 години',
+                                  delay: const Duration(milliseconds: 50),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.update,
+                                        color: Colors.white.withOpacity(0.9),
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        'Дані оновлено востаннє о ${DateFormat('HH:mm').format(_lastUpdated!)}',
                                         style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
                                           color: Colors.white.withOpacity(0.9),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 10),
-                                  AnimatedEntrance(
-                                    delay: const Duration(milliseconds: 350),
-                                    child: _buildGlassContainer(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 20,
-                                        horizontal: 0,
-                                      ),
-                                      child: SizedBox(
-                                        height: 150,
-                                        child: SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          physics: const BouncingScrollPhysics(),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                            ),
-                                            child: HourlyTemperatureChart(
-                                              forecast: _weather!.hourlyForecast,
-                                              formatTempNumber:
-                                              _formatTempOnlyNumber,
-                                            ),
-                                          ),
-                                        ),
+                                ),
+                              const SizedBox(height: 20),
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 150),
+                                child: AnimatedWeatherIcon(
+                                  iconCode: _weather!.iconCode,
+                                  size: 160,
+                                  partOfDay: _weather!.partOfDay,
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 200),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _buildThermometer(_weather!.temperature),
+                                    const SizedBox(width: 15),
+                                    Text(
+                                      _formatTemp(_weather!.temperature) +
+                                          (_selectedUnit == TempUnit.celsius
+                                              ? 'C'
+                                              : ''),
+                                      style: const TextStyle(
+                                        fontSize: 80,
+                                        fontWeight: FontWeight.w200,
+                                        color: Colors.white,
+                                        height: 1.1,
                                       ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 250),
+                                child: Text(
+                                  _cleanWeatherDescription(
+                                    _weather!.description,
                                   ),
-                                  const SizedBox(height: 30),
-                                ],
-
-                                // --- ПАНЕЛЬ ДЕТАЛЕЙ ---
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 1.2,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              if (_weather!.hourlyForecast.isNotEmpty) ...[
                                 AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 400),
+                                  delay: const Duration(milliseconds: 300),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Прогноз на 24 години',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                AnimatedEntrance(
+                                  delay: const Duration(milliseconds: 350),
                                   child: _buildGlassContainer(
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                          children: [
-                                            _buildWeatherDetail(
-                                              Icons.thermostat_auto,
-                                              'Відчувається',
-                                              _formatTemp(_weather!.feelsLike),
-                                            ),
-                                            _buildWeatherDetail(
-                                              Icons.water_drop,
-                                              'Вологість',
-                                              '${_weather!.humidity}%',
-                                            ),
-                                            _buildWeatherDetail(
-                                              Icons.umbrella,
-                                              'Опади',
-                                              '${_weather!.precipitation} мм',
-                                            ),
-                                          ],
-                                        ),
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: 15.0,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                      horizontal: 0,
+                                    ),
+                                    child: SizedBox(
+                                      height: 150,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        physics: const BouncingScrollPhysics(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
                                           ),
-                                          child: Divider(color: Colors.white24),
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                          children: [
-                                            _buildWeatherDetail(
-                                              Icons.air,
-                                              'Вітер',
-                                              '${_weather!.windSpeed} м/с\n${(_weather!.windSpeed * 3.6).toStringAsFixed(1)} км/г',
-                                            ),
-                                            _buildWeatherDetail(
-                                              Icons.wb_twilight,
-                                              'Схід',
-                                              DateFormat('HH:mm')
-                                                  .format(_weather!.sunrise),
-                                            ),
-                                            _buildWeatherDetail(
-                                              Icons.nights_stay,
-                                              'Захід',
-                                              DateFormat('HH:mm')
-                                                  .format(_weather!.sunset),
-                                            ),
-                                          ],
-                                        ),
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            vertical: 15.0,
+                                          child: HourlyTemperatureChart(
+                                            forecast: _weather!.hourlyForecast,
+                                            formatTempNumber:
+                                                _formatTempOnlyNumber,
                                           ),
-                                          child: Divider(color: Colors.white24),
                                         ),
-                                        Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                          children: [
-                                            _buildWeatherDetail(
-                                              Icons.speed,
-                                              'Тиск',
-                                              _formatPressure(_weather!.pressure),
-                                            ),
-                                            _buildWeatherDetail(
-                                              Icons.masks,
-                                              'Якість повітря',
-                                              _getAqiInfo(_weather!.aqi)['text'],
-                                              valueColor: _getAqiInfo(
-                                                _weather!.aqi,
-                                              )['color'],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 30),
-
-                                // --- ЩОДЕННИЙ ПРОГНОЗ (5 днів) ---
-                                if (_weather!.dailyForecast.isNotEmpty) ...[
-                                  AnimatedEntrance(
-                                    delay: const Duration(milliseconds: 450),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Прогноз на 5 днів',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white.withOpacity(0.9),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  AnimatedEntrance(
-                                    delay: const Duration(milliseconds: 500),
-                                    child: _buildGlassContainer(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                        horizontal: 15,
-                                      ),
-                                      child: ListView.separated(
-                                        physics:
-                                        const NeverScrollableScrollPhysics(),
-                                        shrinkWrap: true,
-                                        itemCount: _weather!.dailyForecast.length,
-                                        separatorBuilder: (context, index) =>
-                                        const Divider(
-                                          color: Colors.white24,
-                                          height: 1,
-                                        ),
-                                        itemBuilder: (context, index) {
-                                          final daily =
-                                          _weather!.dailyForecast[index];
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 8,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                SizedBox(
-                                                  width: 100,
-                                                  child: Text(
-                                                    _getUkrainianWeekday(
-                                                      daily.date.weekday,
-                                                    ),
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Expanded(
-                                                  child: Align(
-                                                    alignment: Alignment.center,
-                                                    child: AnimatedWeatherIcon(
-                                                      iconCode: daily.iconCode,
-                                                      size: 45,
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(
-                                                  width: 90,
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                    children: [
-                                                      Text(
-                                                        _formatTemp(
-                                                          daily.minTemp,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 10),
-                                                      Text(
-                                                        _formatTemp(
-                                                          daily.maxTemp,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontWeight:
-                                                          FontWeight.bold,
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 30),
-                                ],
                               ],
-                            ),
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 400),
+                                child: _buildGlassContainer(
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          _buildWeatherDetail(
+                                            Icons.thermostat_auto,
+                                            'Відчувається',
+                                            _formatTemp(_weather!.feelsLike),
+                                          ),
+                                          _buildWeatherDetail(
+                                            Icons.water_drop,
+                                            'Вологість',
+                                            '${_weather!.humidity}%',
+                                          ),
+                                          _buildWeatherDetail(
+                                            Icons.umbrella,
+                                            'Опади',
+                                            '${_weather!.precipitation} мм',
+                                          ),
+                                        ],
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 15.0,
+                                        ),
+                                        child: Divider(color: Colors.white24),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          _buildWeatherDetail(
+                                            Icons.air,
+                                            'Вітер',
+                                            '${_weather!.windSpeed} м/с\n${(_weather!.windSpeed * 3.6).toStringAsFixed(1)} км/г',
+                                          ),
+                                          _buildWeatherDetail(
+                                            Icons.wb_twilight,
+                                            'Схід',
+                                            DateFormat(
+                                              'HH:mm',
+                                            ).format(_weather!.sunrise),
+                                          ),
+                                          _buildWeatherDetail(
+                                            Icons.nights_stay,
+                                            'Захід',
+                                            DateFormat(
+                                              'HH:mm',
+                                            ).format(_weather!.sunset),
+                                          ),
+                                        ],
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 15.0,
+                                        ),
+                                        child: Divider(color: Colors.white24),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          _buildWeatherDetail(
+                                            Icons.speed,
+                                            'Тиск',
+                                            _formatPressure(_weather!.pressure),
+                                          ),
+                                          _buildWeatherDetail(
+                                            Icons.masks,
+                                            'Якість повітря',
+                                            _getAqiInfo(_weather!.aqi)['text'],
+                                            valueColor: _getAqiInfo(
+                                              _weather!.aqi,
+                                            )['color'],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+                              if (_weather!.dailyForecast.isNotEmpty) ...[
+                                AnimatedEntrance(
+                                  delay: const Duration(milliseconds: 450),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Прогноз на 5 днів',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                AnimatedEntrance(
+                                  delay: const Duration(milliseconds: 500),
+                                  child: _buildGlassContainer(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 15,
+                                    ),
+                                    child: ListView.separated(
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      shrinkWrap: true,
+                                      itemCount: _weather!.dailyForecast.length,
+                                      separatorBuilder: (context, index) =>
+                                          const Divider(
+                                            color: Colors.white24,
+                                            height: 1,
+                                          ),
+                                      itemBuilder: (context, index) {
+                                        final daily =
+                                            _weather!.dailyForecast[index];
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              SizedBox(
+                                                width: 100,
+                                                child: Text(
+                                                  _getUkrainianWeekday(
+                                                    daily.date.weekday,
+                                                  ),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: Align(
+                                                  alignment: Alignment.center,
+                                                  child: AnimatedWeatherIcon(
+                                                    iconCode: daily.iconCode,
+                                                    size: 45,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                width: 90,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      _formatTemp(
+                                                        daily.minTemp,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      _formatTemp(
+                                                        daily.maxTemp,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+                              ],
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -1157,11 +1144,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWeatherDetail(
-      IconData icon,
-      String label,
-      String value, {
-        Color? valueColor,
-      }) {
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Expanded(
       child: Column(
         children: [
@@ -1169,10 +1156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 5),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 2),
           Text(
@@ -1351,7 +1335,6 @@ class _TemperatureChartPainter extends CustomPainter {
       double x = (i * itemWidth) + (itemWidth / 2);
       double normalizedTemp = (forecast[i].temperature - minTemp) / tempRange;
       double y = size.height - (normalizedTemp * size.height);
-
       points.add(Offset(x, y));
 
       if (i == 0) {
@@ -1370,7 +1353,6 @@ class _TemperatureChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    // Малюємо просто саму лінію без тіні
     canvas.drawPath(path, linePaint);
 
     final fillPath = Path.from(path)

@@ -36,13 +36,13 @@ class WeatherModel {
   final int humidity;
   final double windSpeed;
   final double precipitation;
-  final int pressure; // Додано тиск (hPa)
-  final int aqi; // Додано якість повітря (1-5)
+  final int pressure;
+  final int aqi;
   final DateTime localTime;
   final DateTime sunrise;
   final DateTime sunset;
-  final List<HourlyForecast> hourlyForecast; // Прогноз на 24 год
-  final List<DailyForecast> dailyForecast; // Прогноз на 5 днів
+  final List<HourlyForecast> hourlyForecast;
+  final List<DailyForecast> dailyForecast;
 
   WeatherModel({
     required this.cityName,
@@ -97,15 +97,13 @@ class WeatherModel {
       precip = (currentJson['snow']['1h'] as num).toDouble();
     }
 
-    // Парсинг AQI
-    int parsedAqi = 1; // За замовчуванням "Добре"
+    int parsedAqi = 1;
     if (aqiJson != null &&
         aqiJson['list'] != null &&
         aqiJson['list'].isNotEmpty) {
       parsedAqi = aqiJson['list'][0]['main']['aqi'] ?? 1;
     }
 
-    // Парсинг прогнозів
     List<HourlyForecast> hourly = [];
     List<DailyForecast> daily = [];
 
@@ -120,7 +118,6 @@ class WeatherModel {
           isUtc: true,
         ).add(Duration(seconds: timezoneOffset));
 
-        // Беремо найближчі 8 записів (8 * 3 год = 24 години)
         if (hourly.length < 8) {
           hourly.add(
             HourlyForecast(
@@ -131,7 +128,6 @@ class WeatherModel {
           );
         }
 
-        // Групування по днях для 5-денного прогнозу
         String dateKey =
             "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}";
         double temp = item['main']['temp'].toDouble();
@@ -147,14 +143,13 @@ class WeatherModel {
                 : icon.replaceAll(
                     'n',
                     'd',
-                  ), // Для дня краще показувати денну іконку
+                  ),
           );
         } else {
           if (temp < dailyMap[dateKey]!.minTemp)
             dailyMap[dateKey]!.minTemp = temp;
           if (temp > dailyMap[dateKey]!.maxTemp)
             dailyMap[dateKey]!.maxTemp = temp;
-          // Оновлюємо іконку, якщо це середина дня (близько 12:00 - 15:00)
           if (dt.hour >= 11 && dt.hour <= 16) {
             dailyMap[dateKey]!.iconCode = icon.contains('d')
                 ? icon
@@ -163,7 +158,6 @@ class WeatherModel {
         }
       }
       daily = dailyMap.values.toList();
-      // Видаляємо сьогоднішній день з прогнозу на майбутнє, якщо він там є
       if (daily.isNotEmpty && daily.first.date.day == calcLocalTime.day) {
         daily.removeAt(0);
       }

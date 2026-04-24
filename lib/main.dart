@@ -17,12 +17,12 @@ class WeatherApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Weather App',
+      title: 'Cloudy',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const SplashScreen(), // <--- Тепер спочатку запускаємо Сплеш-екран
+      home: const SplashScreen(),
     );
   }
 }

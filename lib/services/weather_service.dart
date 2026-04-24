@@ -152,7 +152,6 @@ class WeatherService {
         }
       }
 
-      // Робимо 3 запити паралельно для швидкості
       final weatherUrl = Uri.parse(
         '$_weatherUrl?lat=$lat&lon=$lon&appid=$apiKey&units=metric&lang=uk',
       );
