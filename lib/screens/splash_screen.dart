@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 
@@ -14,7 +13,8 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _logoController;
 
   late Animation<double> _logoScale;
-  late Animation<double> _logoRotate;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _logoMove;
 
   @override
   void initState() {
@@ -23,20 +23,30 @@ class _SplashScreenState extends State<SplashScreen>
     // Контролер для логотипу
     _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2000),
     );
 
-    // Анімація масштабу логотипу (вистрибування)
-    _logoScale = CurvedAnimation(
-      parent: _logoController,
-      curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
-    );
-
-    // Анімація обертання логотипу (гойдається)
-    _logoRotate = Tween<double>(begin: -0.15, end: 0.0).animate(
+    // 1. Плавна поява (прозорість від 0 до 1)
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _logoController,
-        curve: const Interval(0.0, 0.8, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
+    );
+
+    // 2. Анімація масштабу (виринання з відскоком)
+    _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+      ),
+    );
+
+    // 3. Рух знизу вгору (спливання)
+    _logoMove = Tween<double>(begin: 40.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -47,13 +57,13 @@ class _SplashScreenState extends State<SplashScreen>
     // Запускаємо анімацію логотипу
     _logoController.forward();
 
-    // Загальний час очікування перед переходом
-    await Future.delayed(const Duration(milliseconds: 2000));
+    // Даємо трохи більше часу, щоб насолодитись красивою появою
+    await Future.delayed(const Duration(milliseconds: 2500));
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 1000),
+          transitionDuration: const Duration(milliseconds: 800),
           pageBuilder: (_, __, ___) => const HomeScreen(),
           transitionsBuilder: (_, animation, __, child) {
             // Плавне згасання сплеш-екрану
@@ -73,26 +83,30 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A), // Темний фон
+      backgroundColor: const Color(0xFF4FC3F7),
+      // Темний фон (залишив ваш колір)
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Тільки анімований логотип
+            // Динамічний та плавний анімований логотип
             AnimatedBuilder(
               animation: _logoController,
               builder: (context, child) {
-                return Transform.scale(
-                  scale: _logoScale.value,
-                  child: Transform.rotate(
-                    angle: _logoRotate.value * pi,
-                    child: child,
+                return Opacity(
+                  opacity: _logoOpacity.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _logoMove.value),
+                    child: Transform.scale(
+                      scale: _logoScale.value,
+                      child: child,
+                    ),
                   ),
                 );
               },
               child: Image.asset(
                 'assets/logo.png',
-                width: 400, // Якщо треба менший чи більший — міняй тут
+                width: 400, // Трохи збалансував розмір для елегантності
                 height: 400,
               ),
             ),

@@ -670,10 +670,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         // --- ГОЛОВНА ІНФОРМАЦІЯ ---
                         if (_isLoading)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 100),
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 100),
+                            child: Column(
+                              children: [
+                                const CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Зачекайте, отримуємо дані...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    shadows: textShadows,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         else if (_errorMessage != null)
