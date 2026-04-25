@@ -78,6 +78,56 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  String _generateWeatherSummary(WeatherModel w) {
+    String desc = w.description.toLowerCase();
+    String tempStr = _formatTempOnlyNumber(w.temperature);
+    String feelsStr = _formatTempOnlyNumber(w.feelsLike);
+    String unit = _selectedUnit == TempUnit.celsius
+        ? '°C'
+        : (_selectedUnit == TempUnit.fahrenheit ? '°F' : 'K');
+
+    String s1 = 'Зараз надворі $desc, температура становить $tempStr$unit.';
+    String s2 =
+        'Відчувається як $feelsStr$unit, вітер швидкістю ${w.windSpeed.toStringAsFixed(1)} м/с.';
+
+    String s3 = '';
+    if (w.precipitation > 0) {
+      s3 =
+          'Очікуються опади (${w.precipitation} мм), краще захопити парасольку.';
+    } else if (w.humidity > 80) {
+      s3 = 'Досить висока вологість повітря (${w.humidity}%).';
+    } else if (w.aqi >= 4) {
+      s3 = 'Погана якість повітря, краще обмежити перебування на вулиці.';
+    } else if (w.windSpeed > 10) {
+      s3 = 'Надворі сильний вітер, будьте обережні.';
+    } else {
+      if (w.isDayTime) {
+        s3 = 'Сприятливий час для прогулянки на свіжому повітрі.';
+      } else {
+        s3 = 'Бажаємо приємного та спокійного вечора.';
+      }
+    }
+
+    return '$s1 $s2 $s3';
+  }
+
+  void _handleNetworkError(dynamic e) {
+    String errorMsg = e.toString();
+    if (errorMsg.contains('no_internet')) {
+      setState(() {
+        _errorMessage =
+            'Немає підключення до інтернету.\nПеревірте з\'єднання та спробуйте ще раз.';
+      });
+    } else if (errorMsg.contains('weak_signal')) {
+      setState(() {
+        _errorMessage =
+            'Ваше інтернет-з\'єднання нестабільне.\nДані завантажуються занадто довго.';
+      });
+    } else {
+      setState(() => _errorMessage = 'Сталася помилка: $e');
+    }
+  }
+
   Future<void> _loadWeatherByLocation() async {
     setState(() {
       _isLoading = true;
@@ -102,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'Немає доступу до геолокації. Введіть місто вручну.',
         );
       } else {
-        setState(() => _errorMessage = 'Сталася помилка: $e');
+        _handleNetworkError(e);
       }
     } finally {
       setState(() => _isLoading = false);
@@ -190,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _lastUpdated = DateTime.now();
       });
     } catch (e) {
-      setState(() => _errorMessage = 'Не вдалося завантажити погоду');
+      _handleNetworkError(e);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -687,14 +737,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         else if (_errorMessage != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 50),
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: Colors.redAccent.shade100,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.wifi_off_rounded,
+                                  color: Colors.white70,
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _errorMessage!,
+                                  style: TextStyle(
+                                    color: Colors.redAccent.shade100,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: _loadWeatherByLocation,
+                                  icon: const Icon(
+                                    Icons.refresh,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  label: const Text(
+                                    'Спробувати ще раз',
+                                    style: TextStyle(color: Colors.blueAccent),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         else if (_weather != null)
@@ -892,6 +971,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                     letterSpacing: 1.2,
                                   ),
                                   textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              AnimatedEntrance(
+                                delay: const Duration(milliseconds: 275),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0,
+                                  ),
+                                  child: Text(
+                                    _generateWeatherSummary(_weather!),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withOpacity(0.85),
+                                      fontWeight: FontWeight.w400,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 40),

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/weather_model.dart';
@@ -105,9 +107,10 @@ class WeatherService {
     if (apiKey == null) return [];
 
     try {
-      final response = await http.get(
-        Uri.parse('$_geoUrl/direct?q=$query&limit=5&appid=$apiKey'),
-      );
+      final response = await http
+          .get(Uri.parse('$_geoUrl/direct?q=$query&limit=5&appid=$apiKey'))
+          .timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
         return data.map((json) {
@@ -138,9 +141,14 @@ class WeatherService {
       String country = '';
 
       if (knownCityName == null) {
-        final geoResponse = await http.get(
-          Uri.parse('$_geoUrl/reverse?lat=$lat&lon=$lon&limit=1&appid=$apiKey'),
-        );
+        final geoResponse = await http
+            .get(
+              Uri.parse(
+                '$_geoUrl/reverse?lat=$lat&lon=$lon&limit=1&appid=$apiKey',
+              ),
+            )
+            .timeout(const Duration(seconds: 10));
+
         if (geoResponse.statusCode == 200) {
           final List geoData = jsonDecode(geoResponse.body);
           if (geoData.isNotEmpty) {
@@ -166,7 +174,7 @@ class WeatherService {
         http.get(weatherUrl),
         http.get(forecastUrl),
         http.get(aqiUrl),
-      ]);
+      ]).timeout(const Duration(seconds: 15));
 
       final weatherRes = responses[0];
       final forecastRes = responses[1];
@@ -176,11 +184,14 @@ class WeatherService {
         final weatherJson = jsonDecode(weatherRes.body);
 
         Map<String, dynamic>? forecastJson;
-        if (forecastRes.statusCode == 200)
+        if (forecastRes.statusCode == 200) {
           forecastJson = jsonDecode(forecastRes.body);
+        }
 
         Map<String, dynamic>? aqiJson;
-        if (aqiRes.statusCode == 200) aqiJson = jsonDecode(aqiRes.body);
+        if (aqiRes.statusCode == 200) {
+          aqiJson = jsonDecode(aqiRes.body);
+        }
 
         return WeatherModel.fromJson(
           weatherJson,
@@ -193,7 +204,14 @@ class WeatherService {
       } else {
         throw Exception('Не вдалося завантажити погоду');
       }
+    } on SocketException {
+      throw Exception('no_internet');
+    } on TimeoutException {
+      throw Exception('weak_signal');
     } catch (e) {
+      if (e.toString().contains('SocketException')) {
+        throw Exception('no_internet');
+      }
       throw Exception('Помилка підключення: $e');
     }
   }
