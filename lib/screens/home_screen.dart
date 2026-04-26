@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   TempUnit _selectedUnit = TempUnit.celsius;
+  bool _showDetails = false;
 
   @override
   void initState() {
@@ -143,6 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _weather = weather;
         _lastUpdated = DateTime.now();
+        _showDetails = false;
       });
     } catch (e) {
       if (e is LocationException) {
@@ -238,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
           dailyForecast: weather.dailyForecast,
         );
         _lastUpdated = DateTime.now();
+        _showDetails = false;
       });
     } catch (e) {
       _handleNetworkError(e);
@@ -1040,194 +1043,295 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                               AnimatedEntrance(
                                 delay: const Duration(milliseconds: 400),
-                                child: _buildGlassContainer(
-                                  child: Column(
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildWeatherDetail(
-                                            Icons.thermostat_auto,
-                                            'Відчувається',
-                                            _formatTemp(_weather!.feelsLike),
-                                          ),
-                                          _buildWeatherDetail(
-                                            Icons.water_drop,
-                                            'Вологість',
-                                            '${_weather!.humidity}%',
-                                          ),
-                                          _buildWeatherDetail(
-                                            Icons.umbrella,
-                                            'Опади',
-                                            '${_weather!.precipitation} мм',
-                                          ),
-                                        ],
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 15.0,
-                                        ),
-                                        child: Divider(color: Colors.white24),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildWeatherDetail(
-                                            Icons.air,
-                                            'Вітер',
-                                            '${_weather!.windSpeed} м/с\n${(_weather!.windSpeed * 3.6).toStringAsFixed(1)} км/г',
-                                          ),
-                                          _buildWeatherDetail(
-                                            Icons.wb_twilight,
-                                            'Схід',
-                                            DateFormat(
-                                              'HH:mm',
-                                            ).format(_weather!.sunrise),
-                                          ),
-                                          _buildWeatherDetail(
-                                            Icons.nights_stay,
-                                            'Захід',
-                                            DateFormat(
-                                              'HH:mm',
-                                            ).format(_weather!.sunset),
-                                          ),
-                                        ],
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          vertical: 15.0,
-                                        ),
-                                        child: Divider(color: Colors.white24),
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceAround,
-                                        children: [
-                                          _buildWeatherDetail(
-                                            Icons.speed,
-                                            'Тиск',
-                                            _formatPressure(_weather!.pressure),
-                                          ),
-                                          _buildWeatherDetail(
-                                            Icons.masks,
-                                            'Якість повітря',
-                                            _getAqiInfo(_weather!.aqi)['text'],
-                                            valueColor: _getAqiInfo(
-                                              _weather!.aqi,
-                                            )['color'],
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showDetails = !_showDetails;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    _showDetails
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: Colors.white70,
+                                  ),
+                                  label: Text(
+                                    _showDetails
+                                        ? 'Сховати деталі'
+                                        : 'Детальний прогноз',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 24,
+                                    ),
+                                    backgroundColor: Colors.white.withOpacity(
+                                      0.1,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 30),
-                              if (_weather!.dailyForecast.isNotEmpty) ...[
-                                AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 450),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Прогноз на 5 днів',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white.withOpacity(0.9),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                AnimatedEntrance(
-                                  delay: const Duration(milliseconds: 500),
-                                  child: _buildGlassContainer(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                      horizontal: 15,
-                                    ),
-                                    child: ListView.separated(
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      shrinkWrap: true,
-                                      itemCount: _weather!.dailyForecast.length,
-                                      separatorBuilder: (context, index) =>
-                                          const Divider(
-                                            color: Colors.white24,
-                                            height: 1,
+                              const SizedBox(height: 15),
+                              AnimatedSize(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOut,
+                                alignment: Alignment.topCenter,
+                                child: _showDetails
+                                    ? Column(
+                                        children: [
+                                          AnimatedEntrance(
+                                            delay: const Duration(
+                                              milliseconds: 50,
+                                            ),
+                                            child: _buildGlassContainer(
+                                              child: Column(
+                                                children: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceAround,
+                                                    children: [
+                                                      _buildWeatherDetail(
+                                                        Icons.thermostat_auto,
+                                                        'Відчувається',
+                                                        _formatTemp(
+                                                          _weather!.feelsLike,
+                                                        ),
+                                                      ),
+                                                      _buildWeatherDetail(
+                                                        Icons.water_drop,
+                                                        'Вологість',
+                                                        '${_weather!.humidity}%',
+                                                      ),
+                                                      _buildWeatherDetail(
+                                                        Icons.umbrella,
+                                                        'Опади',
+                                                        '${_weather!.precipitation} мм',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          vertical: 15.0,
+                                                        ),
+                                                    child: Divider(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceAround,
+                                                    children: [
+                                                      _buildWeatherDetail(
+                                                        Icons.air,
+                                                        'Вітер',
+                                                        '${_weather!.windSpeed} м/с\n${(_weather!.windSpeed * 3.6).toStringAsFixed(1)} км/г',
+                                                      ),
+                                                      _buildWeatherDetail(
+                                                        Icons.wb_twilight,
+                                                        'Схід',
+                                                        DateFormat(
+                                                          'HH:mm',
+                                                        ).format(
+                                                          _weather!.sunrise,
+                                                        ),
+                                                      ),
+                                                      _buildWeatherDetail(
+                                                        Icons.nights_stay,
+                                                        'Захід',
+                                                        DateFormat(
+                                                          'HH:mm',
+                                                        ).format(
+                                                          _weather!.sunset,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          vertical: 15.0,
+                                                        ),
+                                                    child: Divider(
+                                                      color: Colors.white24,
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceAround,
+                                                    children: [
+                                                      _buildWeatherDetail(
+                                                        Icons.speed,
+                                                        'Тиск',
+                                                        _formatPressure(
+                                                          _weather!.pressure,
+                                                        ),
+                                                      ),
+                                                      _buildWeatherDetail(
+                                                        Icons.masks,
+                                                        'Якість повітря',
+                                                        _getAqiInfo(
+                                                          _weather!.aqi,
+                                                        )['text'],
+                                                        valueColor: _getAqiInfo(
+                                                          _weather!.aqi,
+                                                        )['color'],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
-                                      itemBuilder: (context, index) {
-                                        final daily =
-                                            _weather!.dailyForecast[index];
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 8,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              SizedBox(
-                                                width: 100,
+                                          const SizedBox(height: 30),
+                                          if (_weather!
+                                              .dailyForecast
+                                              .isNotEmpty) ...[
+                                            AnimatedEntrance(
+                                              delay: const Duration(
+                                                milliseconds: 100,
+                                              ),
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
                                                 child: Text(
-                                                  _getUkrainianWeekday(
-                                                    daily.date.weekday,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ),
-                                              Expanded(
-                                                child: Align(
-                                                  alignment: Alignment.center,
-                                                  child: AnimatedWeatherIcon(
-                                                    iconCode: daily.iconCode,
-                                                    size: 45,
+                                                  'Прогноз на 5 днів',
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white
+                                                        .withOpacity(0.9),
                                                   ),
                                                 ),
                                               ),
-                                              SizedBox(
-                                                width: 90,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                    Text(
-                                                      _formatTemp(
-                                                        daily.minTemp,
-                                                      ),
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 16,
-                                                      ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            AnimatedEntrance(
+                                              delay: const Duration(
+                                                milliseconds: 150,
+                                              ),
+                                              child: _buildGlassContainer(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                      horizontal: 15,
                                                     ),
-                                                    const SizedBox(width: 10),
-                                                    Text(
-                                                      _formatTemp(
-                                                        daily.maxTemp,
+                                                child: ListView.separated(
+                                                  physics:
+                                                      const NeverScrollableScrollPhysics(),
+                                                  shrinkWrap: true,
+                                                  itemCount: _weather!
+                                                      .dailyForecast
+                                                      .length,
+                                                  separatorBuilder:
+                                                      (context, index) =>
+                                                          const Divider(
+                                                            color:
+                                                                Colors.white24,
+                                                            height: 1,
+                                                          ),
+                                                  itemBuilder: (context, index) {
+                                                    final daily = _weather!
+                                                        .dailyForecast[index];
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            vertical: 8,
+                                                          ),
+                                                      child: Row(
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 100,
+                                                            child: Text(
+                                                              _getUkrainianWeekday(
+                                                                daily
+                                                                    .date
+                                                                    .weekday,
+                                                              ),
+                                                              style: const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Align(
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              child: AnimatedWeatherIcon(
+                                                                iconCode: daily
+                                                                    .iconCode,
+                                                                size: 45,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            width: 90,
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .end,
+                                                              children: [
+                                                                Text(
+                                                                  _formatTemp(
+                                                                    daily
+                                                                        .minTemp,
+                                                                  ),
+                                                                  style: const TextStyle(
+                                                                    color: Colors
+                                                                        .white70,
+                                                                    fontSize:
+                                                                        16,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 10,
+                                                                ),
+                                                                Text(
+                                                                  _formatTemp(
+                                                                    daily
+                                                                        .maxTemp,
+                                                                  ),
+                                                                  style: const TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontSize:
+                                                                        16,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                    );
+                                                  },
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 30),
-                              ],
+                                            ),
+                                            const SizedBox(height: 30),
+                                          ],
+                                        ],
+                                      )
+                                    : const SizedBox(width: double.infinity),
+                              ),
                             ],
                           ),
                       ],
